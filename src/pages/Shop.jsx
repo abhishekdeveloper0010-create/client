@@ -38,14 +38,14 @@ function CategorySection() {
               key={index}
               className="text-center raounded-2xl "
               style={{
-                width: "210px",
+                width: "150px",
               }}
             >
               <div
                 className="shadow-sm"
                 style={{
-                  width: "210px",
-                  height: "210px",
+                  width: "200px",
+                  height: "170px",
                   background: "#006b91",
                   borderRadius: "60px 20px 60px 20px",
                   overflow: "hidden",
