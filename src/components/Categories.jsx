@@ -67,7 +67,7 @@ function Categories() {
               <div className="pt-6"></div>
               <Link
                 to="/shop"
-                className="inline-flex items-center gap-2 sm:gap-3 mt-6 border-2 border-sky-200 text-sky-700 text-base sm:text-lg md:text-2xl px-5 py-3 sm:px-7 sm:py-3 md:px-10 md:py-4 rounded-xl md:rounded-2xl hover:bg-[#82c2df] hover:text-white duration-300"
+                className="inline-flex items-center gap-4 sm:gap-5 md:gap-6 mt-6 border-2 border-sky-200 text-sky-700 text-base sm:text-lg md:text-2xl px-5 py-3 sm:px-7 sm:py-3 md:px-10 md:py-4 rounded-xl md:rounded-2xl hover:bg-[#82c2df] hover:text-white duration-300"
               >
                 Shop Now
                 <span>➜</span>

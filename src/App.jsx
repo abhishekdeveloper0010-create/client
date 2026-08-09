@@ -14,6 +14,8 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Wishlist from "./pages/Wishlist";
 import OrderTracking from "./pages/OrderTracking";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import ProductDetail from "./pages/ProductDetail";
 function App() {
   return (
@@ -33,7 +35,8 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/order-tracking" element={<OrderTracking />} />
-        <Route path="/shop" element={<Shop />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/product/:id" element={<ProductDetail />} />
       </Routes>
 

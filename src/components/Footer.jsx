@@ -22,12 +22,12 @@ function Footer() {
             <h2 className="text-3xl font-semibold pb-4">Explore</h2>
 
             <ul className="space-y-4 text-2xl text-gray-200">
-              <li><Link to="/men">Men</Link></li>
-              <li><Link to="/women">Women</Link></li>
-              <li><Link to="/kids">Kids</Link></li>
-              <li><Link to="/new-arrivals">New Arrivals</Link></li>
-              <li><Link to="/brands">Brands</Link></li>
-              <li><Link to="/stores">Stores</Link></li>
+              <li><Link to="/shop" className="transition hover:text-sky-300">Shop</Link></li>
+              <li><Link to="/about" className="transition hover:text-sky-300">About Us</Link></li>
+              <li><Link to="/contact" className="transition hover:text-sky-300">Contact</Link></li>
+              <li><Link to="/wishlist" className="transition hover:text-sky-300">Wishlist</Link></li>
+              <li><Link to="/order-tracking" className="transition hover:text-sky-300">Track Order</Link></li>
+              <li><Link to="/login" className="transition hover:text-sky-300">Login</Link></li>
             </ul>
           </div>
 
@@ -36,11 +36,11 @@ function Footer() {
             <h2 className="text-3xl font-semibold pb-4">Services</h2>
 
             <ul className="space-y-4 text-2xl text-gray-200">
-              <li><Link to="/faq">FAQ</Link></li>
-              <li><Link to="/returns">Returns & Exchanges</Link></li>
-              <li><Link to="/shipping">Shipping Info</Link></li>
-              <li><Link to="/size-guide">Size Guide</Link></li>
-              <li><Link to="/contact">Contact Us</Link></li>
+              <li><Link to="/contact" className="transition hover:text-sky-300">Contact Us</Link></li>
+              <li><Link to="/about" className="transition hover:text-sky-300">Our Story</Link></li>
+              <li><Link to="/terms" className="transition hover:text-sky-300">Terms of Service</Link></li>
+              <li><Link to="/privacy" className="transition hover:text-sky-300">Privacy Policy</Link></li>
+              <li><Link to="/cart" className="transition hover:text-sky-300">Cart</Link></li>
             </ul>
           </div>
 
@@ -83,10 +83,10 @@ function Footer() {
             <h2 className="text-3xl font-semibold pb-4 pl-16">Quick Links</h2>
 
             <ul className="space-y-4 text-2xl text-gray-200 pl-16 pb-6">
-              <li><Link to="/about">About Us</Link></li>
-              <li><Link to="/careers">Careers</Link></li>
-              <li><Link to="/gift-cards">Gift Cards</Link></li>
-              <li><Link to="/track-order">Track Order</Link></li>
+              <li><Link to="/about" className="transition hover:text-sky-300">About Us</Link></li>
+              <li><Link to="/wishlist" className="transition hover:text-sky-300">Wishlist</Link></li>
+              <li><Link to="/order-tracking" className="transition hover:text-sky-300">Track Order</Link></li>
+              <li><Link to="/contact" className="transition hover:text-sky-300">Support</Link></li>
             </ul>
 
             <h3 className="text-3xl pt-12 pl-10  ">

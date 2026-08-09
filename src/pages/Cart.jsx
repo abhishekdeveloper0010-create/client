@@ -5,6 +5,9 @@ import CartItem from "../components/CartItem";
 function Cart() {
   const navigate = useNavigate();
   const [cart, setCart] = useState([]);
+  const [couponCode, setCouponCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState("");
 
   // =========================
   // LOAD CART
@@ -101,13 +104,36 @@ function Cart() {
   // DELIVERY
   // =========================
 
-  const delivery = cart.length > 0 ? 50 : 0;
+  const delivery = cart.length > 0 ? (subtotal >= 1000 ? 0 : 50) : 0;
 
   // =========================
   // TOTAL
   // =========================
 
-  const total = subtotal + delivery;
+  const total = Math.max(0, subtotal + delivery - discount);
+
+  const applyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+
+    if (!code) {
+      setDiscount(0);
+      setCouponMessage("Enter a coupon code to save more.");
+      return;
+    }
+
+    if (code === "APPLE10") {
+      const value = Math.min(Math.round(subtotal * 0.1), 200);
+      setDiscount(value);
+      setCouponMessage(`Coupon applied! You saved ₹${value}.`);
+    } else if (code === "STYLE20") {
+      const value = Math.min(Math.round(subtotal * 0.2), 300);
+      setDiscount(value);
+      setCouponMessage(`Coupon applied! You saved ₹${value}.`);
+    } else {
+      setDiscount(0);
+      setCouponMessage("Invalid coupon code. Try APPLE10 or STYLE20.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -257,7 +283,21 @@ function Cart() {
                 </span>
 
                 <span className="text-green-600">
-                  Free
+                  {delivery === 0 ? "Free" : "₹50"}
+                </span>
+
+              </div>
+
+              {/* DISCOUNT */}
+
+              <div className="flex justify-between text-2xl pt-4">
+
+                <span>
+                  Coupon
+                </span>
+
+                <span className="text-green-600">
+                  -₹{discount}
                 </span>
 
               </div>
@@ -275,6 +315,32 @@ function Cart() {
                 </span>
 
               </div>
+
+              <div className="rounded-2xl border border-sky-100 bg-sky-50 p-3 text-sm text-slate-600">
+                <p className="font-semibold text-slate-800">Offers for you</p>
+                <p className="mt-1">Use APPLE10 or STYLE20 for extra savings on fashion essentials.</p>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(event) => setCouponCode(event.target.value)}
+                  placeholder="Coupon code"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-base outline-none focus:border-sky-500"
+                />
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {couponMessage && (
+                <p className="mt-2 text-sm text-slate-600">{couponMessage}</p>
+              )}
 
               <hr />
 

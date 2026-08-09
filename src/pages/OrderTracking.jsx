@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 function OrderTracking() {
   const [orders, setOrders] = useState([]);
+  const [cancelReason, setCancelReason] = useState("Changed my mind");
+  const [cancelMessage, setCancelMessage] = useState("");
 
   useEffect(() => {
     const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
@@ -10,42 +12,179 @@ function OrderTracking() {
 
   const latestOrder = orders[0];
 
+  const cancelOrder = () => {
+    if (!latestOrder || latestOrder.status === "Cancelled") {
+      return;
+    }
+
+    const updatedOrders = orders.map((order) =>
+      order.id === latestOrder.id
+        ? {
+            ...order,
+            status: "Cancelled",
+            cancelledAt: new Date().toLocaleDateString(),
+            cancellationReason: cancelReason,
+            refundInfo: "Refund will be initiated within 3-5 business days.",
+          }
+        : order
+    );
+
+    setOrders(updatedOrders);
+    localStorage.setItem("orders", JSON.stringify(updatedOrders));
+    setCancelMessage("Your order has been cancelled successfully.");
+  };
+
+  const isCancelable = latestOrder && latestOrder.status !== "Cancelled" && latestOrder.status !== "Delivered";
+
   return (
-    <section className="min-h-screen bg-[linear-gradient(135deg,#f5fbff_0%,#eef9ff_100%)] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-      <div className="mx-auto max-w-5xl rounded-[36px] border border-sky-100 bg-white p-6 shadow-[0_20px_60px_-20px_rgba(2,132,199,0.22)] sm:p-8 lg:p-12">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-600">Order Tracking</p>
-        <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl">Track your latest order</h1>
+    <section className="w-full bg-white py-10 sm:py-14 lg:py-20">
+      <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16">
+        {/* Heading */}
+        <div className="text-center">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-[55px] font-bold text-[#0c4a6e]">
+            Order Tracking
+          </h1>
+
+          <p className="pt-4 pb-4 text-base sm:text-lg lg:text-xl text-slate-600">
+            Track your latest order
+          </p>
+        </div>
 
         {!latestOrder ? (
+          /* No Orders */
           <div className="mt-8 rounded-[28px] border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-600 sm:p-10">
-            No orders placed yet. Complete your first purchase to see tracking details here.
+            No orders placed yet. Complete your first purchase to see tracking
+            details here.
           </div>
         ) : (
-          <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50 p-5 sm:p-6">
+          /* Order Details */
+          <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50 p-5 sm:p-6 lg:p-8">
+            {/* Order ID + Status */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-600">Order ID</p>
-                <p className="mt-2 text-xl font-semibold text-slate-900">{latestOrder.id}</p>
+                <p className="text-1sm font-semibold uppercase tracking-[0.2em] text-sky-600 pb-5">
+                  Order ID
+                </p>
+
+                <p className="mt-2 break-all text-lg sm:text-xl font-semibold text-slate-900 pb-4">
+                  {latestOrder.id}
+                </p>
               </div>
-              <div className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                {latestOrder.status}
+
+              <div className="self-start rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700 sm:self-auto">
+                {latestOrder.status || "Order Placed"}
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[24px] bg-white p-4 shadow-sm">
-                <p className="text-sm font-semibold text-slate-500">Placed On</p>
-                <p className="mt-2 text-slate-900">{latestOrder.placedAt}</p>
+            {/* Placed Date + Total */}
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-[24px] bg-white p-4 sm:p-5 shadow-sm">
+                <p className="text-sm font-semibold text-slate-500">
+                  Placed On
+                </p>
+
+                <p className="mt-2 text-base sm:text-lg text-slate-900">
+                  {latestOrder.placedAt || "Not available"}
+                </p>
               </div>
-              <div className="rounded-[24px] bg-white p-4 shadow-sm">
-                <p className="text-sm font-semibold text-slate-500">Total Amount</p>
-                <p className="mt-2 text-slate-900">₹{latestOrder.total}</p>
+
+              <div className="rounded-[24px] bg-white p-4 sm:p-5 shadow-sm">
+                <p className="text-sm font-semibold text-slate-500">
+                  Total Amount
+                </p>
+
+                <p className="mt-2 text-base sm:text-lg font-semibold text-slate-900">
+                  ₹{latestOrder.total || 0}
+                </p>
               </div>
             </div>
+            <br />
+            {/* Payment + Address */}
+            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-[24px] border border-sky-100 bg-sky-50 p-4 sm:p-5">
+                <p className="font-semibold text-slate-900">Payment Method</p>
 
-            <div className="mt-6 rounded-[24px] border border-sky-100 bg-sky-50 p-4">
+                <p className="mt-2 text-sm text-slate-600 sm:text-base">
+                  {latestOrder.paymentMethod || "Card Payment"}
+                </p>
+
+                {latestOrder.paymentDetails && (
+                  <div className="mt-3 space-y-1 text-sm text-slate-600">
+                    {latestOrder.paymentDetails.cardNumber && <p>Card: {latestOrder.paymentDetails.cardNumber}</p>}
+                    {latestOrder.paymentDetails.upiId && <p>UPI: {latestOrder.paymentDetails.upiId}</p>}
+                    {latestOrder.paymentDetails.codNote && <p>Note: {latestOrder.paymentDetails.codNote}</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-[24px] border border-sky-100 bg-sky-50 p-4 sm:p-5">
+                <p className="font-semibold text-slate-900">Delivery Address</p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
+                  {latestOrder.address || "Not provided"}
+                  {latestOrder.city && `, ${latestOrder.city}`}
+                  {latestOrder.state && `, ${latestOrder.state}`}
+                  {latestOrder.pin && ` - ${latestOrder.pin}`}
+                </p>
+              </div>
+            </div>
+            <br />
+            {/* Cancellation */}
+            <div className="mt-6 rounded-[24px] border border-rose-100 bg-rose-50 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-slate-900">Order Actions</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Cancel anytime before dispatch and we will help with a quick refund.
+                  </p>
+                </div>
+                {isCancelable && (
+                  <button
+                    type="button"
+                    onClick={cancelOrder}
+                    className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                  >
+                    Cancel Order
+                  </button>
+                )}
+              </div>
+
+              {isCancelable && (
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-slate-700">
+                    Why are you cancelling?
+                  </label>
+                  <textarea
+                    value={cancelReason}
+                    onChange={(event) => setCancelReason(event.target.value)}
+                    rows="3"
+                    className="mt-2 w-full rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm outline-none focus:border-rose-400"
+                  />
+                </div>
+              )}
+
+              {cancelMessage && (
+                <p className="mt-3 text-sm font-semibold text-rose-700">{cancelMessage}</p>
+              )}
+
+              {latestOrder.status === "Cancelled" && (
+                <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-3 text-sm text-slate-600">
+                  <p className="font-semibold text-slate-900">Cancellation Details</p>
+                  <p className="mt-1">Reason: {latestOrder.cancellationReason || "Not provided"}</p>
+                  <p className="mt-1">Refund: {latestOrder.refundInfo || "Refund will be initiated shortly."}</p>
+                </div>
+              )}
+            </div>
+            <br />
+            {/* Delivery Update */}
+            <div className="mt-6 rounded-[24px] border border-sky-100 bg-sky-50 p-4 sm:p-5">
               <p className="font-semibold text-slate-900">Delivery Update</p>
-              <p className="mt-2 text-sm leading-7 text-slate-600 sm:text-base">Your package is being packed and will be shipped shortly. You will receive a live update soon.</p>
+
+              <p className="mt-2 text-sm leading-7 text-slate-600 sm:text-base">
+                {latestOrder.status === "Cancelled"
+                  ? "Your order has been cancelled. If a payment was already captured, the refund process will begin shortly."
+                  : "Your package is being packed and will be shipped shortly. You will receive a live update soon."}
+              </p>
             </div>
           </div>
         )}

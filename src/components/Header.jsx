@@ -112,29 +112,49 @@ function Header() {
             </Link>
 
             {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setProfileOpen((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-white hover:bg-sky-700"
-                >
-                  <FaUserCircle />
-                  My Profile
-                </button>
+             <div
+  className="relative"
+  onMouseEnter={() => setProfileOpen(true)}
+  onMouseLeave={() => setProfileOpen(false)}
+>
+  <button
+    className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-white transition duration-300 hover:bg-sky-700"
+  >
+    <FaUserCircle />
+    My Profile
+  </button>
 
-                {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
-                    <Link to="/order-tracking" onClick={() => setProfileOpen(false)} className="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-sky-50">
-                      Order Tracking
-                    </Link>
-                    <Link to="/wishlist" onClick={() => setProfileOpen(false)} className="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-sky-50">
-                      Wishlist
-                    </Link>
-                    <button onClick={handleLogout} className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+  {profileOpen && (
+    <div className="absolute right-0 mt-2 w-62 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
+      <h2 className="pl-2 text-lg font-bold">My Profile</h2>
+
+      <hr className="my-2 border-slate-400" />
+
+      <Link
+        to="/order-tracking"
+        onClick={() => setProfileOpen(false)}
+        className="block rounded-xl px-3 py-2 text-1sm text-slate-700 hover:bg-sky-50"
+      >
+        Order Tracking
+      </Link>
+
+      <Link
+        to="/wishlist"
+        onClick={() => setProfileOpen(false)}
+        className="block rounded-xl px-3 py-2 text-1sm text-slate-700 hover:bg-sky-50"
+      >
+        Wishlist
+      </Link>
+
+      <button
+        onClick={handleLogout}
+        className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+      >
+        Logout
+      </button>
+    </div>
+  )}
+</div>
             ) : (
               <Link
                 to="/login"
