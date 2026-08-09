@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CartItem from "../components/CartItem";
 
 function Cart() {
+  const navigate = useNavigate();
   const [cart, setCart] = useState([]);
 
   // =========================
@@ -262,7 +264,7 @@ function Cart() {
 
               {/* DELIVERY */}
 
-              <div className="flex justify-between text-2xl pt-4">
+              <div className="flex justify-between text-2xl pt-4 pb-5">
 
                 <span>
                   Delivery
@@ -301,6 +303,8 @@ function Cart() {
               {/* CHECKOUT */}
 
               <button
+                type="button"
+                onClick={() => navigate("/checkout")}
                 className="
                   w-full
                   mt-5

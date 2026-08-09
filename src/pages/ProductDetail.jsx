@@ -1,53 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-import kurta from "../assets/ShopProducts/kurta.png";
-import saree from "../assets/ShopProducts/saree.png";
-import tasrika from "../assets/ShopProducts/tasrika.png";
-import campus from "../assets/ShopProducts/campus.png";
-
-const products = [
-  {
-    id: 1,
-    title: "Cotton Kurta",
-    image: kurta,
-    images: [kurta, saree, tasrika, campus],
-    price: 499,
-    oldPrice: 999,
-    offer: "40% OFF",
-    description: "Premium Cotton Kurta for Women",
-  },
-  {
-    id: 2,
-    title: "Sarees",
-    image: saree,
-    images: [saree, kurta, tasrika, campus],
-    price: 999,
-    oldPrice: 1499,
-    offer: "35% OFF",
-    description: "Beautiful Saree Collection",
-  },
-  {
-    id: 3,
-    title: "Tasrika",
-    image: tasrika,
-    images: [tasrika, kurta, saree, campus],
-    price: 799,
-    oldPrice: 1299,
-    offer: "50% OFF",
-    description: "Latest Tasrika Collection",
-  },
-  {
-    id: 4,
-    title: "Campus Sutra",
-    image: campus,
-    images: [campus, kurta, saree, tasrika],
-    price: 699,
-    oldPrice: 1199,
-    offer: "70% OFF",
-    description: "Campus Sutra Fashion Wear",
-  },
-];
+import products from "../data/products";
 
 function ProductDetail() {
   const { id } = useParams();
