@@ -25,6 +25,15 @@ function ProductDetail() {
   // ADD TO CART
   // =========================
 
+  const addToWishlist = () => {
+    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    if (!wishlist.includes(product.id)) {
+      wishlist.push(product.id);
+      localStorage.setItem("wishlist", JSON.stringify(wishlist));
+      window.dispatchEvent(new Event("wishlistChanged"));
+    }
+  };
+
   const addToCart = () => {
     const cart =
       JSON.parse(localStorage.getItem("cart")) || [];
@@ -285,6 +294,26 @@ function ProductDetail() {
                 pt-8
               "
             >
+              <button
+                onClick={addToWishlist}
+                className="
+                  w-full
+                  sm:w-1/2
+                  border-2
+                  border-rose-400
+                  text-rose-500
+                  py-3
+                  sm:py-4
+                  cursor-pointer
+                  rounded-xl
+                  text-lg
+                  font-bold
+                  hover:bg-rose-50
+                "
+              >
+                Add to Wishlist
+              </button>
+
               <button
                 onClick={addToCart}
                 className="

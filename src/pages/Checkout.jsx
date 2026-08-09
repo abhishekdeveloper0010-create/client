@@ -48,6 +48,17 @@ function Checkout() {
       return;
     }
 
+    const orderData = {
+      id: `ORD-${Date.now()}`,
+      status: "Packed",
+      placedAt: new Date().toLocaleDateString(),
+      total: total,
+    };
+
+    const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+    existingOrders.unshift(orderData);
+    localStorage.setItem("orders", JSON.stringify(existingOrders));
+
     localStorage.removeItem("cart");
     setCart([]);
     setOrderPlaced(true);

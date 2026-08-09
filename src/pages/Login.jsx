@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  FaUser,
-  FaLock,
-  FaEye,
-  FaEyeSlash,
-} from "react-icons/fa";
+import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Login() {
   // Email aur Password values
@@ -74,8 +69,9 @@ function Login() {
       "user",
       JSON.stringify({
         email: credentials.email,
-      })
+      }),
     );
+    window.dispatchEvent(new Event("authChanged"));
 
     // Home page par redirect
     navigate("/");
@@ -145,11 +141,7 @@ function Login() {
                     <FaUser
                       className={`
                         shrink-0 text-lg
-                        ${
-                          errors.email
-                            ? "text-red-400"
-                            : "text-slate-300"
-                        }
+                        ${errors.email ? "text-red-400" : "text-slate-300"}
                       `}
                     />
 
@@ -170,9 +162,7 @@ function Login() {
 
                   {/* Email Error */}
                   {errors.email && (
-                    <p className="mt-2 text-sm text-red-400">
-                      {errors.email}
-                    </p>
+                    <p className="mt-2 text-sm text-red-400">{errors.email}</p>
                   )}
                 </div>
 
@@ -197,11 +187,7 @@ function Login() {
                     <FaLock
                       className={`
                         shrink-0 text-lg
-                        ${
-                          errors.password
-                            ? "text-red-400"
-                            : "text-cyan-400"
-                        }
+                        ${errors.password ? "text-red-400" : "text-cyan-400"}
                       `}
                     />
 
@@ -223,9 +209,7 @@ function Login() {
                     {/* Eye Icon - RIGHT */}
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowPassword((prev) => !prev)
-                      }
+                      onClick={() => setShowPassword((prev) => !prev)}
                       className="
                         shrink-0 text-lg text-cyan-400
                         hover:text-white
@@ -233,9 +217,7 @@ function Login() {
                         cursor-pointer
                       "
                       aria-label={
-                        showPassword
-                          ? "Hide password"
-                          : "Show password"
+                        showPassword ? "Hide password" : "Show password"
                       }
                     >
                       {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -249,7 +231,7 @@ function Login() {
                     </p>
                   )}
                 </div>
-  {/* Forgot Password */}
+                {/* Forgot Password */}
                 <div className="pb-10 text-right">
                   <Link
                     to="/forgot-password"
@@ -279,8 +261,6 @@ function Login() {
                 >
                   Login
                 </button>
-
-              
 
                 {/* Sign Up */}
                 <p className="pt-5 text-center text-base text-slate-300">

@@ -1,14 +1,66 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FaShoppingCart,
   FaSearch,
   FaBars,
   FaTimes,
+  FaUserCircle,
 } from "react-icons/fa";
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [wishlistCount, setWishlistCount] = useState(0);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const syncUser = () => {
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      setUser(currentUser);
+    };
+
+    const countWishlist = () => {
+      const saved = JSON.parse(localStorage.getItem("wishlist")) || [];
+      setWishlistCount(saved.length);
+    };
+
+    syncUser();
+    countWishlist();
+
+    const handleAuthChanged = () => {
+      syncUser();
+    };
+
+    window.addEventListener("authChanged", handleAuthChanged);
+    window.addEventListener("storage", handleAuthChanged);
+    window.addEventListener("wishlistChanged", countWishlist);
+
+    return () => {
+      window.removeEventListener("authChanged", handleAuthChanged);
+      window.removeEventListener("storage", handleAuthChanged);
+      window.removeEventListener("wishlistChanged", countWishlist);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setProfileOpen(false);
+    window.dispatchEvent(new Event("authChanged"));
+    navigate("/");
+  };
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm("");
+      setMenuOpen(false);
+    }
+  };
 
   return (
     <header className="w-full bg-[#d8edf8] shadow-md sticky top-0 z-50">
@@ -35,10 +87,13 @@ function Header() {
               Products
             </Link>
 
-            <a href="#contact" className="hover:text-sky-600">
+            <Link to="/about" className="hover:text-sky-600">
+              About
+            </Link>
+
+            <Link to="/contact" className="hover:text-sky-600">
               Contact
-            </a>
-            
+            </Link>
           </nav>
 
           {/* Right Side */}
@@ -46,7 +101,8 @@ function Header() {
 
             
 
-            {/* Cart */}
+            
+
             <Link
               to="/cart"
               className="flex items-center gap-2 text-black hover:text-sky-600"
@@ -55,28 +111,52 @@ function Header() {
               Cart
             </Link>
 
-            {/* Login */}
-            <Link
-              to="/login"
-              className="bg-sky-600 text-white px-5 py-2 rounded-md hover:bg-sky-700"
-            >
-              Login
-            </Link>
-            
-            {/* Search */}
-            <div className="flex items-center bg-white rounded-full border border-gray-300 overflow-hidden">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setProfileOpen((prev) => !prev)}
+                  className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-white hover:bg-sky-700"
+                >
+                  <FaUserCircle />
+                  My Profile
+                </button>
 
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
+                    <Link to="/order-tracking" onClick={() => setProfileOpen(false)} className="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-sky-50">
+                      Order Tracking
+                    </Link>
+                    <Link to="/wishlist" onClick={() => setProfileOpen(false)} className="block rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-sky-50">
+                      Wishlist
+                    </Link>
+                    <button onClick={handleLogout} className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="bg-sky-600 text-white px-5 py-2 rounded-md hover:bg-sky-700"
+              >
+                Login
+              </Link>
+            )}
+
+            <form onSubmit={handleSearch} className="flex items-center bg-white rounded-full border border-gray-300 overflow-hidden">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search products..."
                 className="w-64 px-4 py-2 outline-none"
               />
 
-              <button className="text-grey px-4 py-2 hover:bg-sky-700">
+              <button type="submit" className="text-grey px-4 py-2 hover:bg-sky-700 hover:text-white">
                 <FaSearch />
               </button>
-
-            </div>
+            </form>
 
           </div>
 
@@ -104,27 +184,54 @@ function Header() {
               Products
             </Link>
 
-            <a href="#contact">Contact</a>
+            <Link to="/about" onClick={() => setMenuOpen(false)}>
+              About
+            </Link>
+
+            <Link to="/contact" onClick={() => setMenuOpen(false)}>
+              Contact
+            </Link>
+
+            
 
             <Link to="/cart" onClick={() => setMenuOpen(false)}>
               Cart
             </Link>
 
-            <Link to="/login" onClick={() => setMenuOpen(false)}>
-              Login
-            </Link>
+            {user ? (
+              <>
+                <Link to="/order-tracking" onClick={() => setMenuOpen(false)}>
+                  Order Tracking
+                </Link>
+                <Link to="/wishlist" onClick={() => setMenuOpen(false)}>
+                  Wishlist
+                </Link>
+                <Link to="/profile" onClick={() => setMenuOpen(false)} className="font-semibold text-sky-700">
+                  My Profile
+                </Link>
+                <button onClick={handleLogout} className="text-left text-rose-600">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" onClick={() => setMenuOpen(false)}>
+                Login
+              </Link>
+            )}
 
-            <div className="flex border rounded-full overflow-hidden">
+            <form onSubmit={handleSearch} className="flex border rounded-full overflow-hidden">
               <input
                 type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search..."
                 className="flex-1 px-4 py-2 outline-none"
               />
 
-              <button className="bg-sky-600 text-white px-4">
+              <button type="submit" className="bg-sky-600 text-white px-4">
                 <FaSearch />
               </button>
-            </div>
+            </form>
 
           </div>
         </div>
