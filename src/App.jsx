@@ -17,6 +17,7 @@ import OrderTracking from "./pages/OrderTracking";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ProductDetail from "./pages/ProductDetail";
+import Profile from "./pages/Profile";
 function App() {
   return (
     <BrowserRouter>
@@ -37,6 +38,7 @@ function App() {
         <Route path="/order-tracking" element={<OrderTracking />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetail />} />
       </Routes>
 

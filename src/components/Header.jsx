@@ -137,12 +137,13 @@ function Header() {
   onMouseEnter={() => setProfileOpen(true)}
   onMouseLeave={() => setProfileOpen(false)}
 >
-  <button
+  <Link
+    to="/profile"
     className="flex items-center gap-2 rounded-full bg-sky-600 px-4 py-2 text-white transition duration-300 hover:bg-sky-700"
   >
     <FaUserCircle />
     My Profile
-  </button>
+  </Link>
 
   {profileOpen && (
     <div className="absolute right-0 mt-2 w-62 rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
