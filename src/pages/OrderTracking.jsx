@@ -26,7 +26,7 @@ function OrderTracking() {
             cancellationReason: cancelReason,
             refundInfo: "Refund will be initiated within 3-5 business days.",
           }
-        : order
+        : order,
     );
 
     setOrders(updatedOrders);
@@ -34,7 +34,10 @@ function OrderTracking() {
     setCancelMessage("Your order has been cancelled successfully.");
   };
 
-  const isCancelable = latestOrder && latestOrder.status !== "Cancelled" && latestOrder.status !== "Delivered";
+  const isCancelable =
+    latestOrder &&
+    latestOrder.status !== "Cancelled" &&
+    latestOrder.status !== "Delivered";
 
   return (
     <section className="w-full bg-white py-10 sm:py-14 lg:py-20">
@@ -101,7 +104,7 @@ function OrderTracking() {
             <br />
             {/* Payment + Address */}
             <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="rounded-[24px] border border-sky-100 bg-sky-50 p-4 sm:p-5">
+              <div className="rounded-[24px] border border-sky-600 bg-sky-50 p-4 sm:p-5">
                 <p className="font-semibold text-slate-900">Payment Method</p>
 
                 <p className="mt-2 text-sm text-slate-600 sm:text-base">
@@ -110,14 +113,20 @@ function OrderTracking() {
 
                 {latestOrder.paymentDetails && (
                   <div className="mt-3 space-y-1 text-sm text-slate-600">
-                    {latestOrder.paymentDetails.cardNumber && <p>Card: {latestOrder.paymentDetails.cardNumber}</p>}
-                    {latestOrder.paymentDetails.upiId && <p>UPI: {latestOrder.paymentDetails.upiId}</p>}
-                    {latestOrder.paymentDetails.codNote && <p>Note: {latestOrder.paymentDetails.codNote}</p>}
+                    {latestOrder.paymentDetails.cardNumber && (
+                      <p>Card: {latestOrder.paymentDetails.cardNumber}</p>
+                    )}
+                    {latestOrder.paymentDetails.upiId && (
+                      <p>UPI: {latestOrder.paymentDetails.upiId}</p>
+                    )}
+                    {latestOrder.paymentDetails.codNote && (
+                      <p>Note: {latestOrder.paymentDetails.codNote}</p>
+                    )}
                   </div>
                 )}
               </div>
 
-              <div className="rounded-[24px] border border-sky-100 bg-sky-50 p-4 sm:p-5">
+              <div className="rounded-[24px] border border-sky-600 bg-sky-50 p-4 sm:p-5">
                 <p className="font-semibold text-slate-900">Delivery Address</p>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
@@ -133,16 +142,17 @@ function OrderTracking() {
             <div className="mt-6 rounded-[24px] border border-rose-100 bg-rose-50 p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-semibold text-slate-900">Order Actions</p>
+                  <p className="font-semibold text-[18px] text-slate-900">Order Actions</p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Cancel anytime before dispatch and we will help with a quick refund.
+                    Cancel anytime before dispatch and we will help with a quick
+                    refund.
                   </p>
                 </div>
                 {isCancelable && (
                   <button
                     type="button"
                     onClick={cancelOrder}
-                    className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                    className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700 "
                   >
                     Cancel Order
                   </button>
@@ -150,8 +160,8 @@ function OrderTracking() {
               </div>
 
               {isCancelable && (
-                <div className="mt-4">
-                  <label className="block text-sm font-semibold text-slate-700">
+                <div className="pt-4">
+                  <label className="block text-1sm font-semibold text-slate-700 pb-2">
                     Why are you cancelling?
                   </label>
                   <textarea
@@ -164,14 +174,24 @@ function OrderTracking() {
               )}
 
               {cancelMessage && (
-                <p className="mt-3 text-sm font-semibold text-rose-700">{cancelMessage}</p>
+                <p className="mt-3 text-sm font-semibold text-rose-700">
+                  {cancelMessage}
+                </p>
               )}
 
               {latestOrder.status === "Cancelled" && (
                 <div className="mt-4 rounded-2xl border border-rose-200 bg-white p-3 text-sm text-slate-600">
-                  <p className="font-semibold text-slate-900">Cancellation Details</p>
-                  <p className="mt-1">Reason: {latestOrder.cancellationReason || "Not provided"}</p>
-                  <p className="mt-1">Refund: {latestOrder.refundInfo || "Refund will be initiated shortly."}</p>
+                  <p className="font-semibold text-slate-900">
+                    Cancellation Details
+                  </p>
+                  <p className="mt-1">
+                    Reason: {latestOrder.cancellationReason || "Not provided"}
+                  </p>
+                  <p className="mt-1">
+                    Refund:{" "}
+                    {latestOrder.refundInfo ||
+                      "Refund will be initiated shortly."}
+                  </p>
                 </div>
               )}
             </div>

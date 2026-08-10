@@ -203,9 +203,7 @@ function CartItem({
 
         <button
           type="button"
-          onClick={() =>
-            removeItem(item.cartItemId)
-          }
+          onClick={() => removeItem(item.cartItemId)}
           className="
             text-red-500
             hover:text-red-700

@@ -35,6 +35,7 @@ function Cart() {
       "cart",
       JSON.stringify(updatedCart)
     );
+    window.dispatchEvent(new Event("cartChanged"));
   };
 
   // =========================
@@ -59,6 +60,7 @@ function Cart() {
       "cart",
       JSON.stringify(updatedCart)
     );
+    window.dispatchEvent(new Event("cartChanged"));
   };
 
   // =========================
@@ -86,6 +88,7 @@ function Cart() {
       "cart",
       JSON.stringify(updatedCart)
     );
+    window.dispatchEvent(new Event("cartChanged"));
   };
 
   // =========================
@@ -321,7 +324,7 @@ function Cart() {
                 <p className="mt-1">Use APPLE10 or STYLE20 for extra savings on fashion essentials.</p>
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="pt-4 pb-5 flex gap-2">
                 <input
                   type="text"
                   value={couponCode}
@@ -352,7 +355,7 @@ function Cart() {
                   justify-between
                  
                   font-bold
-                  text-2xl pt-4  pb-5
+                  text-2xl pt-4  pb-8
                 "
               >
 

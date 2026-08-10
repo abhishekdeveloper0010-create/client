@@ -11,7 +11,9 @@ function ProductDetail() {
 
   const [selectedImage, setSelectedImage] = useState(product?.image || "");
 
-  const [selectedSize, setSelectedSize] = useState("M");
+  const [selectedSize, setSelectedSize] = useState(
+    product?.sizes?.[0] || "M",
+  );
 
   if (!product) {
     return (
@@ -35,22 +37,18 @@ function ProductDetail() {
   };
 
   const addToCart = () => {
-    const cart =
-      JSON.parse(localStorage.getItem("cart")) || [];
-  
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
     // Har cart item ke liye unique ID
-    const cartItemId =
-      `${product.id}-${selectedSize}-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2, 9)}`;
-  
+    const cartItemId = `${product.id}-${selectedSize}-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 9)}`;
+
     // Same product + same size already cart me hai?
     const existingItem = cart.find(
-      (item) =>
-        item.id === product.id &&
-        item.size === selectedSize
+      (item) => item.id === product.id && item.size === selectedSize,
     );
-  
+
     if (existingItem) {
       // Same product + same size hai
       existingItem.quantity += 1;
@@ -58,28 +56,26 @@ function ProductDetail() {
       // Product alag hai ya size alag hai
       cart.push({
         cartItemId: cartItemId,
-  
+
         id: product.id,
         title: product.title,
         description: product.description,
-  
+
         image: selectedImage,
-  
+
         price: product.price,
         oldPrice: product.oldPrice,
         offer: product.offer,
-  
+
         size: selectedSize,
-  
+
         quantity: 1,
       });
     }
-  
-    localStorage.setItem(
-      "cart",
-      JSON.stringify(cart)
-    );
-  
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+    window.dispatchEvent(new Event("cartChanged"));
+
     navigate("/cart");
   };
 
@@ -110,7 +106,7 @@ function ProductDetail() {
 
             {/* Thumbnails */}
 
-            <div className="flex gap-3 sm:gap-4 mt-5 overflow-x-auto">
+            <div className="flex gap-3 sm:gap-4 pt-5 overflow-x-auto">
               {product.images.map((img, index) => (
                 <img
                   key={index}
@@ -235,7 +231,7 @@ function ProductDetail() {
                 flex-wrap
               "
             >
-              {["S", "M", "L", "XL", "XXL"].map((size) => (
+              {product.sizes.map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}

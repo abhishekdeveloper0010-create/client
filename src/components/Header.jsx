@@ -14,6 +14,7 @@ function Header() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,21 +28,35 @@ function Header() {
       setWishlistCount(saved.length);
     };
 
+    const countCart = () => {
+      const savedCart = JSON.parse(localStorage.getItem("cart")) || [];
+      const totalItems = savedCart.reduce(
+        (sum, item) => sum + Number(item.quantity || 0),
+        0,
+      );
+      setCartCount(totalItems);
+    };
+
     syncUser();
     countWishlist();
+    countCart();
 
     const handleAuthChanged = () => {
       syncUser();
     };
 
     window.addEventListener("authChanged", handleAuthChanged);
+    window.addEventListener("storage", countCart);
     window.addEventListener("storage", handleAuthChanged);
     window.addEventListener("wishlistChanged", countWishlist);
+    window.addEventListener("cartChanged", countCart);
 
     return () => {
       window.removeEventListener("authChanged", handleAuthChanged);
+      window.removeEventListener("storage", countCart);
       window.removeEventListener("storage", handleAuthChanged);
       window.removeEventListener("wishlistChanged", countWishlist);
+      window.removeEventListener("cartChanged", countCart);
     };
   }, []);
 
@@ -105,10 +120,15 @@ function Header() {
 
             <Link
               to="/cart"
-              className="flex items-center gap-2 text-black hover:text-sky-600"
+              className="relative flex items-center gap-2 text-black hover:text-sky-600"
             >
               <FaShoppingCart />
               Cart
+              {cartCount > 0 && (
+                <span className="absolute -right-3 -top-2 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-red-500 px-2 text-xs font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
             </Link>
 
             {user ? (
