@@ -15,6 +15,14 @@ function ProductDetail() {
     product?.sizes?.[0] || "M",
   );
 
+  const selectedPrice =
+    (product.priceBySize && product.priceBySize[selectedSize]) ||
+    product.price;
+
+  const selectedOldPrice =
+    (product.oldPriceBySize && product.oldPriceBySize[selectedSize]) ||
+    product.oldPrice;
+
   if (!product) {
     return (
       <div className="text-center py-20">
@@ -24,10 +32,24 @@ function ProductDetail() {
   }
 
   // =========================
-  // ADD TO CART
+  // AUTH / CART LOGIC
   // =========================
 
+  const getCurrentUser = () => {
+    return JSON.parse(localStorage.getItem("user"));
+  };
+
+  const askLogin = () => {
+    alert("Please login or register first to continue.");
+    navigate("/login");
+  };
+
   const addToWishlist = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      return askLogin();
+    }
+
     const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
     if (!wishlist.includes(product.id)) {
       wishlist.push(product.id);
@@ -37,6 +59,11 @@ function ProductDetail() {
   };
 
   const addToCart = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      return askLogin();
+    }
+
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
     // Har cart item ke liye unique ID
@@ -63,8 +90,8 @@ function ProductDetail() {
 
         image: selectedImage,
 
-        price: product.price,
-        oldPrice: product.oldPrice,
+        price: selectedPrice,
+        oldPrice: selectedOldPrice,
         offer: product.offer,
 
         size: selectedSize,
@@ -77,6 +104,16 @@ function ProductDetail() {
     window.dispatchEvent(new Event("cartChanged"));
 
     navigate("/cart");
+  };
+
+  const buyNow = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      return askLogin();
+    }
+
+    addToCart();
+    navigate("/checkout");
   };
 
   return (
@@ -181,15 +218,15 @@ function ProductDetail() {
                 {product.offer}
               </span>
 
-              <span
-                className="
-                  line-through
-                  text-gray-400
-                  text-lg
-                "
-              >
-                ₹{product.oldPrice}
-              </span>
+                      <span
+                        className="
+                          line-through
+                          text-gray-400
+                          text-lg
+                        "
+                      >
+                        ₹{selectedOldPrice}
+                      </span>
             </div>
 
             {/* Price */}
@@ -203,7 +240,7 @@ function ProductDetail() {
                 pt-4
               "
             >
-              ₹{product.price}
+              ₹{selectedPrice}
             </h2>
 
             {/* ========================= */}
@@ -331,6 +368,7 @@ function ProductDetail() {
               </button>
 
               <button
+                onClick={buyNow}
                 className="
                   w-full
                   sm:w-1/2

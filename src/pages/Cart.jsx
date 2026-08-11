@@ -9,16 +9,39 @@ function Cart() {
   const [discount, setDiscount] = useState(0);
   const [couponMessage, setCouponMessage] = useState("");
 
+  const getCurrentUser = () => {
+    return JSON.parse(localStorage.getItem("user"));
+  };
+
+  const askLogin = () => {
+    alert("Please login to view your cart.");
+    navigate("/login");
+  };
+
+  const handleCheckout = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      return askLogin();
+    }
+
+    navigate("/checkout");
+  };
+
   // =========================
   // LOAD CART
   // =========================
 
   useEffect(() => {
+    const user = getCurrentUser();
+    if (!user) {
+      return askLogin();
+    }
+
     const cartData =
       JSON.parse(localStorage.getItem("cart")) || [];
 
     setCart(cartData);
-  }, []);
+  }, [navigate]);
 
   // =========================
   // REMOVE PRODUCT
@@ -373,7 +396,7 @@ function Cart() {
 
               <button
                 type="button"
-                onClick={() => navigate("/checkout")}
+                onClick={handleCheckout}
                 className="
                   w-full
                   mt-5
