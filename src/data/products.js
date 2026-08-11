@@ -7,6 +7,8 @@ import bag from "../assets/ShopLook/bag.png";
 import shoes from "../assets/ShopLook/shoes.png";
 import slippers from "../assets/categories/slippers.png";
 import men from "../assets/BestSeller/men.png";
+import bangles from "../assets/Bangles/image 240.png";
+import bangles2 from "../assets/Bangles/image 245.png";
 
 const products = [
   {
@@ -145,25 +147,6 @@ const products = [
     inStock: false,
   },
   {
-    id: 9,
-    title: "Traditional Bangles",
-    image: kurta,
-    images: [kurta, saree, tasrika, campus],
-    price: 349,
-    oldPrice: 599,
-    priceBySize: { S: 329, M: 349 },
-    oldPriceBySize: { S: 549, M: 599 },
-    offer: "30% OFF",
-    category: "Bangles",
-    subcategory: "Bangles",
-    description: "Colorful bangle set to complete your ethnic look.",
-    sizes: ["S", "M"],
-    colors: ["Red", "White"],
-    brand: "Apple Blossom",
-    rating: 4.0,
-    inStock: true,
-  },
-  {
     id: 8,
     title: "Beauty Essentials",
     image: bag,
@@ -180,6 +163,45 @@ const products = [
     colors: ["White", "Blue"],
     brand: "Apple Blossom",
     rating: 4.6,
+    inStock: true,
+  },
+  {
+    id: 9,
+    title: "Traditional Bangles",
+    image: bangles,
+    images: [kurta, saree, tasrika, campus],
+    price: 349,
+    oldPrice: 599,
+    priceBySize: { "2-2": 549, "2-4": 599 ,"2-6": 699,"2-8": 899  },
+    oldPriceBySize: { "2-2": 600, "2-4": 600 ,"2-6": 700,"2-8": 900 },
+    offer: "30% OFF",
+    category: "Bangles",
+    subcategory: "Bangles",
+    description: "Colorful bangle set to complete your ethnic look.",
+    sizes: ["2", "2-2", "2-4", "2-6", "2-8"],
+    colors: ["Red", "White"],
+    brand: "Apple Blossom",
+    rating: 4.0,
+    inStock: true,
+  },
+
+  {
+    id: 10,
+    title: "Designer Bangles",
+    image: bangles2,
+    images: [tasrika, kurta, saree, campus],
+    price: 459,
+    oldPrice: 799,
+    priceBySize: { "2-2": 549, "2-4": 599 ,"2-6": 699,"2-8": 899  },
+    oldPriceBySize: {  "2-2": 600, "2-4": 600 ,"2-6": 700,"2-8": 900  },
+    offer: "40% OFF",
+    category: "Bangles",
+    subcategory: "Bangles",
+    description: "Elegant designer bangles for festive and everyday wear.",
+    sizes: ["2", "2-2 ", "2-4", "2-6", "2-8"],
+    colors: ["Gold", "Silver"],
+    brand: "Apple Blossom",
+    rating: 4.3,
     inStock: true,
   },
 ];
