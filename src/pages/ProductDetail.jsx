@@ -1,98 +1,343 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-
-import products from "../data/products";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 function ProductDetail() {
+  // =========================
+  // URL PARAMETER
+  // =========================
+
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const product = products.find((item) => item.id === Number(id));
+  // =========================
+  // ENV VARIABLES
+  // =========================
 
-  const [selectedImage, setSelectedImage] = useState(product?.image || "");
+  const API_URL = import.meta.env.VITE_SERVER_API_URL;
+  const IMAGE_URL = import.meta.env.VITE_SERVER_IMAGES_URL;
 
-  const [selectedSize, setSelectedSize] = useState(
-    product?.sizes?.[0] || "M",
-  );
+  // =========================
+  // STATES
+  // =========================
 
-  const selectedPrice =
-    (product.priceBySize && product.priceBySize[selectedSize]) ||
-    product.price;
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const selectedOldPrice =
-    (product.oldPriceBySize && product.oldPriceBySize[selectedSize]) ||
-    product.oldPrice;
+  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
 
-  if (!product) {
+  // =========================
+  // GET PRODUCT FROM SERVER
+  // =========================
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+
+        const response = await fetch(`${API_URL}/products/${id}`);
+
+        if (!response.ok) {
+          throw new Error("Product not found");
+        }
+
+        const data = await response.json();
+
+        console.log("Product from server:", data);
+        console.log("Stock:", data.stock);
+
+        setProduct(data);
+
+        // =========================
+        // MAIN IMAGE
+        // =========================
+
+        if (data.image) {
+          setSelectedImage(data.image);
+        }
+
+        // =========================
+        // SIZE
+        // =========================
+
+        if (data.sizes) {
+          let sizes = data.sizes;
+
+          if (typeof sizes === "string") {
+            try {
+              sizes = JSON.parse(sizes);
+            } catch {
+              sizes = sizes
+                .split(",")
+                .map((size) => size.trim())
+                .filter(Boolean);
+            }
+          }
+
+          if (Array.isArray(sizes) && sizes.length > 0) {
+            setSelectedSize(sizes[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Product fetch error:", error);
+
+        setProduct(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id, API_URL]);
+
+  // =========================
+  // IMAGE URL
+  // =========================
+
+  const getImageURL = (image) => {
+    if (!image) {
+      return "";
+    }
+
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
+    }
+
+    return `${IMAGE_URL}/${image}`;
+  };
+
+  // =========================
+  // LOADING
+  // =========================
+
+  if (loading) {
     return (
-      <div className="text-center py-20">
-        <h1 className="text-3xl font-bold text-gray-700">Product Not Found</h1>
+      <div className="min-h-screen flex items-center justify-center bg-sky-50">
+        <h2 className="text-2xl font-bold text-gray-700">Loading product...</h2>
       </div>
     );
   }
 
   // =========================
-  // AUTH / CART LOGIC
+  // PRODUCT NOT FOUND
+  // =========================
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
+        <h1 className="text-3xl font-bold text-gray-700">Product Not Found</h1>
+
+        <button
+          type="button"
+          onClick={() => navigate("/shop")}
+          className="
+            mt-6
+            bg-sky-600
+            text-white
+            px-6
+            py-3
+            rounded-xl
+            font-semibold
+            hover:bg-sky-700
+          "
+        >
+          Back to Shop
+        </button>
+      </div>
+    );
+  }
+
+  // =========================
+  // PRODUCT NAME
+  // =========================
+
+  const productName = product.title || product.name || "Product";
+
+  // =========================
+  // OLD PRICE
+  // =========================
+
+  const oldPrice = product.oldPrice || product.old_price;
+
+  // =========================
+  // PRODUCT IMAGES
+  // =========================
+
+  let productImages = [];
+
+  if (product.images) {
+    if (Array.isArray(product.images)) {
+      productImages = product.images;
+    } else {
+      try {
+        productImages = JSON.parse(product.images);
+      } catch {
+        productImages = product.images
+          .split(",")
+          .map((image) => image.trim())
+          .filter(Boolean);
+      }
+    }
+  }
+
+  // Agar database me sirf image field hai
+  if (product.image && productImages.length === 0) {
+    productImages = [product.image];
+  }
+
+  // =========================
+  // PRODUCT SIZES
+  // =========================
+
+  let productSizes = [];
+
+  if (product.sizes) {
+    if (Array.isArray(product.sizes)) {
+      productSizes = product.sizes;
+    } else {
+      try {
+        productSizes = JSON.parse(product.sizes);
+      } catch {
+        productSizes = product.sizes
+          .split(",")
+          .map((size) => size.trim())
+          .filter(Boolean);
+      }
+    }
+  }
+
+  // =========================
+  // USER
   // =========================
 
   const getCurrentUser = () => {
-    return JSON.parse(localStorage.getItem("user"));
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
   };
 
+  // =========================
+  // LOGIN
+  // =========================
+
   const askLogin = () => {
-    alert("Please login or register first to continue.");
+    alert("Please login or register first.");
+
     navigate("/login");
   };
 
+  // =========================
+  // WISHLIST
+  // =========================
+
   const addToWishlist = () => {
     const user = getCurrentUser();
+
     if (!user) {
-      return askLogin();
+      askLogin();
+      return;
     }
 
     const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-    if (!wishlist.includes(product.id)) {
+
+    const alreadyExists = wishlist.some(
+      (item) => Number(item) === Number(product.id),
+    );
+
+    if (!alreadyExists) {
       wishlist.push(product.id);
+
       localStorage.setItem("wishlist", JSON.stringify(wishlist));
+
       window.dispatchEvent(new Event("wishlistChanged"));
+
+      alert("Product added to wishlist!");
+    } else {
+      alert("Product already in wishlist.");
     }
   };
 
+  // =========================
+  // SIZE CHECK
+  // =========================
+
+  const checkSize = () => {
+    if (productSizes.length > 0 && !selectedSize) {
+      alert("Please select a size.");
+      return false;
+    }
+
+    return true;
+  };
+
+  // =========================
+  // STOCK CHECK
+  // =========================
+
+  const checkStock = () => {
+    if (Number(product.stock) <= 0) {
+      alert("Product is out of stock.");
+      return false;
+    }
+
+    return true;
+  };
+
+  // =========================
+  // ADD TO CART
+  // =========================
+
   const addToCart = () => {
     const user = getCurrentUser();
+
+    // Login check
     if (!user) {
-      return askLogin();
+      askLogin();
+      return;
+    }
+
+    // Size check
+    if (!checkSize()) {
+      return;
+    }
+
+    // Stock check
+    if (!checkStock()) {
+      return;
     }
 
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-    // Har cart item ke liye unique ID
-    const cartItemId = `${product.id}-${selectedSize}-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 9)}`;
-
-    // Same product + same size already cart me hai?
     const existingItem = cart.find(
-      (item) => item.id === product.id && item.size === selectedSize,
+      (item) =>
+        Number(item.id) === Number(product.id) && item.size === selectedSize,
     );
 
     if (existingItem) {
-      // Same product + same size hai
       existingItem.quantity += 1;
     } else {
-      // Product alag hai ya size alag hai
       cart.push({
-        cartItemId: cartItemId,
+        cartItemId: `${product.id}-${selectedSize}-${Date.now()}`,
 
         id: product.id,
-        title: product.title,
+
+        title: productName,
+
+        name: productName,
+
         description: product.description,
 
         image: selectedImage,
 
-        price: selectedPrice,
-        oldPrice: selectedOldPrice,
+        price: product.price,
+
+        oldPrice: oldPrice,
+
         offer: product.offer,
+
+        category: product.category,
 
         size: selectedSize,
 
@@ -101,290 +346,523 @@ function ProductDetail() {
     }
 
     localStorage.setItem("cart", JSON.stringify(cart));
+
     window.dispatchEvent(new Event("cartChanged"));
 
     navigate("/cart");
   };
 
-  const buyNow = () => {
-    const user = getCurrentUser();
-    if (!user) {
-      return askLogin();
-    }
+  // =========================
+  // BUY NOW
+  // =========================
 
-    addToCart();
-    navigate("/checkout");
+const buyNow = () => {
+  const user = getCurrentUser();
+
+  // Login check
+  if (!user) {
+    askLogin();
+    return;
+  }
+
+  // Size check
+  if (!checkSize()) {
+    return;
+  }
+
+  // Stock check
+  if (!checkStock()) {
+    return;
+  }
+
+  // Product data check
+  console.log("FULL PRODUCT DATA:", product);
+
+  const checkoutProduct = {
+    id: product.id,
+    title: productName,
+    name: productName,
+    description: product.description,
+    image: selectedImage,
+    price: product.price,
+    oldPrice: oldPrice,
+    offer: product.offer,
+    category: product.category,
+    size: selectedSize,
+    quantity: 1,
   };
 
+  // Save Buy Now product
+  localStorage.setItem(
+    "buyNowProduct",
+    JSON.stringify(checkoutProduct)
+  );
+
+  console.log("Buy Now Product:", checkoutProduct);
+
+  // Go to checkout
+  navigate("/checkout");
+};
+
+  // =========================
+  // DISABLE BUTTON
+  // =========================
+
+  const outOfStock = Number(product.stock) <= 0;
+
+  // =========================
+  // JSX
+  // =========================
+
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-          {/* ========================= */}
-          {/* LEFT IMAGE SECTION */}
-          {/* ========================= */}
+    <div className="min-h-screen bg-sky-50 p-4 sm:p-6 lg:p-10">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+            {/* =========================
+                LEFT SIDE
+            ========================= */}
 
-          <div>
-            {/* Main Image */}
+            <div>
+              {/* MAIN IMAGE */}
 
-            <div className="bg-gray-100 rounded-2xl p-4 sm:p-6 lg:p-10">
-              <img
-                src={selectedImage}
-                alt={product.title}
-                className="
-                  w-full
-                  h-72
-                  sm:h-96
-                  lg:h-[550px]
-                  object-contain
+              <div className="bg-gray-100 rounded-3xl p-4 sm:p-6">
+                {selectedImage ? (
+                  <img
+                    src={getImageURL(selectedImage)}
+                    alt={productName}
+                    className="
+                      w-full
+                      h-72
+                      sm:h-96
+                      lg:h-[550px]
+                      object-contain
+                      rounded-2xl
+                    "
+                  />
+                ) : (
+                  <div
+                    className="
+                    h-72
+                    sm:h-96
+                    lg:h-[550px]
+                    flex
+                    items-center
+                    justify-center
+                  "
+                  >
+                    <p className="text-gray-500">No image available</p>
+                  </div>
+                )}
+              </div>
+
+              {/* THUMBNAILS */}
+
+              {productImages.length > 0 && (
+                <div
+                  className="
+                  flex
+                  gap-3
+                  pt-5
+                  overflow-x-auto
+                  pb-2
                 "
-              />
+                >
+                  {productImages.map((image, index) => (
+                    <img
+                      key={index}
+                      src={getImageURL(image)}
+                      alt={`${productName} ${index + 1}`}
+                      onClick={() => setSelectedImage(image)}
+                      className={`
+                          flex-shrink-0
+                          w-20
+                          h-20
+                          sm:w-24
+                          sm:h-24
+                          object-cover
+                          rounded-xl
+                          border-2
+                          cursor-pointer
+                          ${
+                            selectedImage === image
+                              ? "border-sky-600"
+                              : "border-gray-200"
+                          }
+                        `}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Thumbnails */}
+            {/* =========================
+                RIGHT SIDE
+            ========================= */}
 
-            <div className="flex gap-3 sm:gap-4 pt-5 overflow-x-auto">
-              {product.images.map((img, index) => (
-                <img
-                  key={index}
-                  src={img}
-                  alt={product.title}
-                  onClick={() => setSelectedImage(img)}
-                  className={`
-                    flex-shrink-0
-                    w-16 h-16
-                    sm:w-20 sm:h-20
-                    lg:w-24 lg:h-24
-                    rounded-xl
-                    border-2
-                    cursor-pointer
-                    object-cover
+            <div>
+              {/* CATEGORY */}
 
-                    ${
-                      selectedImage === img
-                        ? "border-sky-600"
-                        : "border-gray-200"
-                    }
-                  `}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* ========================= */}
-          {/* RIGHT DETAILS SECTION */}
-          {/* ========================= */}
-
-          <div>
-            {/* Product Name */}
-
-            <h1
-              className="
-                text-2xl
-                sm:text-3xl
-                lg:text-4xl
-                text-gray-800
-                font-bold
-              "
-            >
-              {product.title}
-            </h1>
-
-            {/* Description */}
-
-            <p
-              className="
-                text-lg
-                sm:text-2xl
-                lg:text-3xl
-                text-gray-500
-                pt-3
-              "
-            >
-              {product.description}
-            </p>
-
-            {/* Offer */}
-
-            <div className="flex items-center gap-3 pt-5">
-              <span
-                className="
-                  text-green-600
-                  font-bold
-                  text-xl
-                  sm:text-2xl
+              {product.category && (
+                <p
+                  className="
+                  text-gray-500
+                  text-lg
                 "
-              >
-                {product.offer}
-              </span>
+                >
+                  Category:{" "}
+                  <span className="font-semibold">{product.category}</span>
+                </p>
+              )}
 
-                      <span
-                        className="
-                          line-through
-                          text-gray-400
-                          text-lg
-                        "
-                      >
-                        ₹{selectedOldPrice}
-                      </span>
-            </div>
+              {/* TITLE */}
 
-            {/* Price */}
-
-            <h2
-              className="
+              <h1
+                className="
                 text-3xl
                 sm:text-4xl
-                lg:text-5xl
                 font-bold
-                pt-4
+                text-gray-800
+                pt-2
               "
-            >
-              ₹{selectedPrice}
-            </h2>
+              >
+                {productName}
+              </h1>
 
-            {/* ========================= */}
-            {/* SIZE */}
-            {/* ========================= */}
+              {/* DESCRIPTION */}
 
-            <h3
-              className="
-                text-xl
-                sm:text-2xl
-                lg:text-3xl
-                font-semibold
-                pt-8
-              "
-            >
-              Select Size
-            </h3>
-
-            <div
-              className="
-                flex
-                gap-3
-                pt-4
-                pb-8
-                flex-wrap
-              "
-            >
-              {product.sizes.map((size) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(size)}
-                  className={`
-                      w-12 h-12
-                      sm:w-14 sm:h-14
-                      lg:w-16 lg:h-16
-                      rounded-xl
-                      border
-                      text-lg
-                      font-semibold
-                      cursor-pointer
-
-                      ${
-                        selectedSize === size
-                          ? "bg-sky-600 text-white"
-                          : "bg-white hover:bg-gray-100"
-                      }
-                    `}
+              {product.description && (
+                <p
+                  className="
+                  pt-4
+                  text-gray-600
+                  text-lg
+                  leading-7
+                "
                 >
-                  {size}
-                </button>
-              ))}
-            </div>
+                  {product.description}
+                </p>
+              )}
 
-            {/* ========================= */}
-            {/* DELIVERY */}
-            {/* ========================= */}
+              {/* BRAND */}
 
-            <div
-              className="
-                mt-6
-                bg-gray-100
-                rounded-xl
-                p-4
-                sm:p-5
-              "
-            >
-              <h3 className="font-bold text-lg sm:text-xl">Delivery Details</h3>
+              {product.brand && (
+                <p
+                  className="
+                  text-gray-500
+                  pt-3
+                "
+                >
+                  Brand: <span className="font-semibold">{product.brand}</span>
+                </p>
+              )}
 
-              <p className="text-gray-600 mt-2">Free Delivery Available</p>
+              {/* RATING */}
 
-              <p className="text-gray-600">Estimated Delivery: 3-5 Days</p>
-            </div>
+              {product.rating && (
+                <p
+                  className="
+                  mt-3
+                  text-gray-700
+                  font-semibold
+                "
+                >
+                  ⭐ {product.rating}
+                </p>
+              )}
 
-            {/* ========================= */}
-            {/* BUTTONS */}
-            {/* ========================= */}
+              {/* PRICE */}
 
-            <div
-              className="
+              <div
+                className="
                 flex
-                flex-col
-                sm:flex-row
+                items-center
                 gap-4
+                pt-6
+                pb-4
+              "
+              >
+                <span
+                  className="
+                  text-3xl
+                  sm:text-4xl
+                  font-bold
+                  text-gray-900
+                "
+                >
+                  ₹{product.price}
+                </span>
+
+                {oldPrice && (
+                  <span
+                    className="
+                    text-xl
+                    text-gray-400
+                    line-through
+                  "
+                  >
+                    ₹{oldPrice}
+                  </span>
+                )}
+              </div>
+
+              {/* OFFER */}
+
+              {product.offer && (
+                <div
+                  className="
+                  mt-3
+                  inline-block
+                  bg-green-100
+                  text-green-700
+                  px-4
+                  py-2
+                  rounded-lg
+                  font-bold
+                "
+                >
+                  {product.offer}
+                </div>
+              )}
+
+              {/* DISCOUNT
+
+              {oldPrice &&
+                Number(oldPrice) >
+                  Number(product.price) && (
+                  <p className="
+                    text-green-600
+                    font-semibold
+                    mt-3
+                  ">
+                    {Math.round(
+                      (
+                        (Number(oldPrice) -
+                          Number(product.price)) /
+                        Number(oldPrice)
+                      ) * 100
+                    )}
+                    % OFF
+                  </p>
+                )} */}
+
+              {/* =========================
+                  SIZE
+              ========================= */}
+
+              {productSizes.length > 0 && (
+                <div className="pt-8">
+                  <h3
+                    className="
+                    text-xl
+                    font-bold
+                    text-gray-800
+                  "
+                  >
+                    Select Size
+                  </h3>
+
+                  <div
+                    className="
+                    flex
+                    flex-wrap
+                    gap-3
+                    pt-2
+                  "
+                  >
+                    {productSizes.map((size, index) => {
+                      // Agar size object hai
+                      const sizeValue =
+                        typeof size === "object" ? size.size : size;
+
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setSelectedSize(sizeValue)}
+                          className={`
+                              w-14
+                              h-14
+                              rounded-xl
+                              border-2
+                              font-semibold
+                              cursor-pointer
+
+                              ${
+                                selectedSize === sizeValue
+                                  ? "bg-sky-600 text-white border-sky-600"
+                                  : "bg-white text-gray-700 border-gray-300 hover:border-sky-500"
+                              }
+                            `}
+                        >
+                          {sizeValue}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedSize && (
+                    <p
+                      className="
+                      mt-3
+                      text-gray-600
+                    "
+                    >
+                      Selected Size:{" "}
+                      <span
+                        className="
+                        font-bold
+                        text-sky-600
+                      "
+                      >
+                        {selectedSize}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* =========================
+                  STOCK
+              ========================= */}
+
+              <div className="pt-7">
+                {Number(product.stock) > 0 ? (
+                  <p
+                    className="
+                    text-green-600
+                    font-semibold
+                  "
+                  >
+                    ✓ In Stock ({product.stock})
+                  </p>
+                ) : (
+                  <p
+                    className="
+                    text-red-600
+                    font-semibold
+                  "
+                  >
+                    ✕ Out of Stock
+                  </p>
+                )}
+              </div>
+
+              {/* =========================
+                  DELIVERY
+              ========================= */}
+
+              <div
+                className="
+                mt-7
+                bg-gray-100
+                rounded-2xl
+                p-5
+              "
+              >
+                <h3
+                  className="
+                  font-bold
+                  text-lg
+                "
+                >
+                  Delivery Details
+                </h3>
+
+                <p
+                  className="
+                  text-gray-600
+                  mt-2
+                "
+                >
+                  Free Delivery Available
+                </p>
+
+                <p
+                  className="
+                  text-gray-600
+                  mt-1
+                "
+                >
+                  Estimated Delivery: 3-5 Days
+                </p>
+              </div>
+
+              {/* =========================
+                  BUTTONS
+              ========================= */}
+
+              <div
+                className="
+                grid
+                grid-cols-1
+                sm:grid-cols-3
+                gap-3
                 pt-8
               "
-            >
-              <button
-                onClick={addToWishlist}
-                className="
-                  w-full
-                  sm:w-1/2
-                  border-2
-                  border-rose-400
-                  text-rose-500
-                  py-3
-                  sm:py-4
-                  cursor-pointer
-                  rounded-xl
-                  text-lg
-                  font-bold
-                  hover:bg-rose-50
-                "
               >
-                Add to Wishlist
-              </button>
+                {/* WISHLIST */}
 
-              <button
-                onClick={addToCart}
-                className="
-                  w-full
-                  sm:w-1/2
-                  border-2
-                  border-sky-600
-                  text-sky-600
-                  py-3
-                  sm:py-4
-                  cursor-pointer
-                  rounded-xl
-                  text-lg
-                  font-bold
-                  hover:bg-sky-50
-                "
-              >
-                Add to Cart
-              </button>
+                <button
+                  type="button"
+                  onClick={addToWishlist}
+                  className="
+                    border-2
+                    border-rose-400
+                    text-rose-500
+                    py-3
+                    rounded-xl
+                    font-bold
+                    hover:bg-rose-50
+                    cursor-pointer
+                  "
+                >
+                  Wishlist
+                </button>
 
-              <button
-                onClick={buyNow}
-                className="
-                  w-full
-                  sm:w-1/2
-                  bg-sky-600
-                  text-white
-                  py-3
-                  sm:py-4
-                  rounded-xl
-                  cursor-pointer
-                  text-lg
-                  font-bold
-                  hover:bg-sky-700
-                "
-              >
-                Buy Now
-              </button>
+                {/* ADD TO CART */}
+
+                <button
+                  type="button"
+                  onClick={addToCart}
+                  disabled={outOfStock}
+                  className="
+                    border-2
+                    border-sky-600
+                    text-sky-600
+                    py-3
+                    rounded-xl
+                    font-bold
+                    hover:bg-sky-50
+                    cursor-pointer
+                    disabled:opacity-50
+                    disabled:cursor-not-allowed
+                  "
+                >
+                  Add to Cart
+                </button>
+
+                {/* BUY NOW */}
+
+                <button
+                  type="button"
+                  onClick={buyNow}
+                  disabled={outOfStock}
+                  className="
+                    bg-sky-600
+                    text-white
+                    py-3
+                    rounded-xl
+                    font-bold
+                    hover:bg-sky-700
+                    cursor-pointer
+                    disabled:opacity-50
+                    disabled:cursor-not-allowed
+                  "
+                >
+                  Buy Now
+                </button>
+              </div>
             </div>
           </div>
         </div>

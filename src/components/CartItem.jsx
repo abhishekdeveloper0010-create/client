@@ -6,16 +6,37 @@ function CartItem({
   increaseQty,
   decreaseQty,
 }) {
+  const imageURL = import.meta.env.VITE_SERVER_IMAGES_URL;
+
+  // =========================
+  // IMAGE URL
+  // =========================
+
+  const getImageURL = (image) => {
+    if (!image) {
+      return "";
+    }
+
+    // Agar image already complete URL hai
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
+      return image;
+    }
+
+    // Server image
+    return `${imageURL}/${image}`;
+  };
+
   return (
     <div
       className="
         grid
-        
         grid-cols-12
         gap-4
         items-center
-         border-b
-         
+        border-b
         p-4
         mt-8
         bg-white
@@ -29,8 +50,8 @@ function CartItem({
       <div className="col-span-12 sm:col-span-2">
 
         <img
-          src={item.image}
-          alt={item.title}
+          src={getImageURL(item.image)}
+          alt={item.name || item.title || "Product"}
           className="
             w-32
             h-36
@@ -53,17 +74,23 @@ function CartItem({
         "
       >
 
+        {/* PRODUCT NAME */}
+
         <h2 className="text-2xl font-bold">
-          {item.title}
+          {item.name || item.title}
         </h2>
+
+        {/* DESCRIPTION */}
 
         <p className="text-gray-500 mt-1">
           {item.description}
         </p>
 
+        {/* PRICE */}
+
         <div className="flex items-center gap-4 pt-4">
 
-          <span className="text-2xl  font-bold text-gray-700 " >
+          <span className="text-2xl font-bold text-gray-700">
             ₹{item.price}
           </span>
 
@@ -80,6 +107,14 @@ function CartItem({
 
         </div>
 
+        {/* OFFER */}
+
+        {item.offer && (
+          <p className="text-green-600 font-semibold mt-2">
+            {item.offer}
+          </p>
+        )}
+
       </div>
 
       {/* ========================= */}
@@ -94,7 +129,6 @@ function CartItem({
           border-l
           border-r
           py-4
-          sm:py-
         "
       >
 
@@ -103,7 +137,7 @@ function CartItem({
         </p>
 
         <h3 className="text-2xl font-bold mt-3">
-          {item.size}
+          {item.size || "-"}
         </h3>
 
       </div>
@@ -119,7 +153,6 @@ function CartItem({
           text-center
           border-r
           py-4
-          sm:py-2
         "
       >
 
@@ -203,7 +236,9 @@ function CartItem({
 
         <button
           type="button"
-          onClick={() => removeItem(item.cartItemId)}
+          onClick={() =>
+            removeItem(item.cartItemId)
+          }
           className="
             text-red-500
             hover:text-red-700

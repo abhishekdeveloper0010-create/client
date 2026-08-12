@@ -42,6 +42,7 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+         
       </Routes>
 
       {/* Footer  */}
