@@ -18,6 +18,8 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
+
+
 function App() {
   return (
     <BrowserRouter>
