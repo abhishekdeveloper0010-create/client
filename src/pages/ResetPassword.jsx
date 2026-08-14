@@ -46,12 +46,10 @@ function ResetPassword() {
         `${import.meta.env.VITE_SERVER_API_URL}/auth/reset-password/${token}`,
         {
           password,
-        }
+        },
       );
 
-      setSuccess(
-        response.data.message || "Password reset successfully."
-      );
+      setSuccess(response.data.message || "Password reset successfully.");
 
       setPassword("");
       setConfirmPassword("");
@@ -62,7 +60,7 @@ function ResetPassword() {
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Password reset failed. Please try again."
+          "Password reset failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -72,7 +70,6 @@ function ResetPassword() {
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4">
       <div className="w-full max-w-[500px] border border-cyan-400 bg-[#0d1f29] p-8 shadow-[0_0_25px_rgba(34,211,238,0.35)]">
-
         {/* Heading */}
         <h1 className="text-center text-4xl font-bold text-white pb-5">
           Reset Password
@@ -83,7 +80,6 @@ function ResetPassword() {
         </p>
 
         <form onSubmit={handleSubmit} className="pt-8">
-
           {/* Success */}
           {success && (
             <div className="mb-5 border border-green-400 bg-green-500/10 px-4 py-3 text-green-400">
@@ -97,7 +93,7 @@ function ResetPassword() {
               {error}
             </div>
           )}
-<br/>
+          <br />
           {/* New Password */}
           <div className="mb-6">
             <label className="mb-2 block text-lg text-slate-300">
@@ -125,7 +121,7 @@ function ResetPassword() {
               </button>
             </div>
           </div>
-<br/>
+          <br />
           {/* Confirm Password */}
           <div className="mb-8">
             <label className="mb-2 block text-lg text-slate-300">
@@ -146,16 +142,15 @@ function ResetPassword() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
-                }
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400"
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
-<br/><br/>
+          <br />
+          <br />
           {/* Button */}
           <button
             type="submit"

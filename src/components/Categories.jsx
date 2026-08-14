@@ -28,7 +28,7 @@ function Categories() {
               <h3 className="text-3xl font-semibold pt-5  ">Women</h3>
               <div className="pt-6"></div>
               <Link
-                to="/women"
+                to="/shop"
                 className="inline-flex items-center gap-2 sm:gap-3 mt-6 bg-[#E59C74] text-white text-base sm:text-lg md:text-2xl px-5 py-3 sm:px-6 sm:py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl hover:bg-[#d8875e] duration-300"
               >
                 Shop Women
@@ -47,7 +47,7 @@ function Categories() {
               <h3 className="text-3xl font-semibold pt-5 ">Men</h3>
               <div className="pt-6"></div>
               <Link
-                to="/men"
+                to="/shop"
                 className="inline-flex items-center gap-2 sm:gap-3 mt-6 bg-[#82c2df] text-white text-base sm:text-lg md:text-2xl px-5 py-3 sm:px-7 sm:py-3 md:px-10 md:py-4 rounded-xl md:rounded-2xl hover:bg-[#6eb3d3] duration-300"
               >
                 Shop Men
