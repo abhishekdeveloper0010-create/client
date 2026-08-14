@@ -38,44 +38,69 @@ function Login() {
   };
 
   // Form Submit
-  const handleSubmit = (event) => {
-    event.preventDefault();
+ const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    const newErrors = {
-      email: "",
-      password: "",
-    };
+  const newErrors = {
+    email: "",
+    password: "",
+  };
 
-    // Email validation
-    if (!credentials.email.trim()) {
-      newErrors.email = "Please enter your email.";
-    }
+  if (!credentials.email.trim()) {
+    newErrors.email = "Please enter your email.";
+  }
 
-    // Password validation
-    if (!credentials.password.trim()) {
-      newErrors.password = "Please enter your password.";
-    }
+  if (!credentials.password.trim()) {
+    newErrors.password = "Please enter your password.";
+  }
 
-    // Errors set
-    setErrors(newErrors);
+  setErrors(newErrors);
 
-    // Agar error hai to login stop
-    if (newErrors.email || newErrors.password) {
+  if (newErrors.email || newErrors.password) {
+    return;
+  }
+
+  try {
+   const response = await fetch(
+  `${import.meta.env.VITE_SERVER_API_URL}/auth/login`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: credentials.email,
+      password: credentials.password,
+    }),
+  }
+);
+
+    const data = await response.json();
+
+    console.log("LOGIN RESPONSE:", data);
+
+    if (!response.ok) {
+      alert(data.message || "Login failed.");
       return;
     }
 
-    // User save in localStorage
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        email: credentials.email,
-      }),
-    );
+    // JWT token save
+    localStorage.setItem("token", data.token);
+
+    // Complete user data save
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    // Header/navbar ko update karne ke liye
     window.dispatchEvent(new Event("authChanged"));
 
-    // Home page par redirect
+    alert("Login successful!");
+
     navigate("/");
-  };
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    alert("Server se connection nahi ho raha.");
+  }
+};
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaEnvelope, FaArrowLeft } from "react-icons/fa";
+import axios from "axios";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -18,22 +19,34 @@ function ForgotPassword() {
   };
 
   // Form submit
-  const handleSubmit = (event) => {
-    event.preventDefault();
+ const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    // Email empty validation
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      setSuccess("");
-      return;
-    }
+  if (!email.trim()) {
+    setError("Please enter your email address.");
+    setSuccess("");
+    return;
+  }
 
-    // Success message
+  try {
+    const response = await axios.post(
+`${import.meta.env.VITE_SERVER_API_URL}/auth/forgot-password`,
+      { email }
+    );
+
     setError("");
     setSuccess(
-      `Password reset instructions have been sent to ${email}.`
+      response.data.message ||
+        `Password reset instructions have been sent to ${email}.`
     );
-  };
+  } catch (error) {
+    setSuccess("");
+    setError(
+      error.response?.data?.message ||
+        "Something went wrong. Please try again."
+    );
+  }
+};
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -116,13 +129,11 @@ function ForgotPassword() {
 
               {/* Description */}
               <p className="pb-8 text-center text-slate-300">
-                Enter your email and we'll send you instructions
-                to reset your password.
+                Enter your email and we'll send you instructions to reset your
+                password.
               </p>
 
               <form onSubmit={handleSubmit}>
-               
-
                 {/* Success Message */}
                 {success && (
                   <div className="mb-5 border border-green-400 bg-green-500/10 px-4 py-3 text-sm text-green-400">
@@ -152,11 +163,7 @@ function ForgotPassword() {
                     <FaEnvelope
                       className={`
                         shrink-0 text-lg
-                        ${
-                          error
-                            ? "text-red-400"
-                            : "text-cyan-400"
-                        }
+                        ${error ? "text-red-400" : "text-cyan-400"}
                       `}
                     />
 
@@ -173,12 +180,10 @@ function ForgotPassword() {
                       "
                     />
                   </div>
-                   {/* Error Message */}
-                {error && (
-                  <div className="pt-2 text-sm text-red-400">
-                    {error}
-                  </div>
-                )}
+                  {/* Error Message */}
+                  {error && (
+                    <div className="pt-2 text-sm text-red-400">{error}</div>
+                  )}
                 </div>
 
                 {/* SEND BUTTON */}

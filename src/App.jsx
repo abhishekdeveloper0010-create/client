@@ -18,7 +18,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import ProductDetail from "./pages/ProductDetail";
 import Profile from "./pages/Profile";
-
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -42,6 +42,10 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetail />} />
+        <Route
+  path="/reset-password/:token"
+  element={<ResetPassword />}
+/>
          
       </Routes>
 

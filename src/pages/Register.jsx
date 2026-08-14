@@ -47,70 +47,83 @@ function Register() {
   };
 
   // Form Submit
-  const handleSubmit = (event) => {
-    event.preventDefault();
+ const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    const newErrors = {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    };
+  const newErrors = {
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  };
 
-    // Username validation
-    if (!formData.name.trim()) {
-      newErrors.name = "Please enter your username.";
-    }
+  if (!formData.name.trim()) {
+    newErrors.name = "Please enter your username.";
+  }
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = "Please enter your email.";
-    }
+  if (!formData.email.trim()) {
+    newErrors.email = "Please enter your email.";
+  }
 
-    // Password validation
-    if (!formData.password.trim()) {
-      newErrors.password = "Please enter your password.";
-    } else if (formData.password.length < 6) {
-      newErrors.password =
-        "Password must be at least 6 characters.";
-    }
+  if (!formData.password.trim()) {
+    newErrors.password = "Please enter your password.";
+  } else if (formData.password.length < 6) {
+    newErrors.password = "Password must be at least 6 characters.";
+  }
 
-    // Confirm Password validation
-    if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword =
-        "Please confirm your password.";
-    } else if (
-      formData.password !== formData.confirmPassword
-    ) {
-      newErrors.confirmPassword =
-        "Passwords do not match.";
-    }
+  if (!formData.confirmPassword.trim()) {
+    newErrors.confirmPassword = "Please confirm your password.";
+  } else if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = "Passwords do not match.";
+  }
 
-    // Errors update
-    setErrors(newErrors);
+  setErrors(newErrors);
 
-    // Agar koi bhi error hai
-    if (
-      newErrors.name ||
-      newErrors.email ||
-      newErrors.password ||
-      newErrors.confirmPassword
-    ) {
+  if (
+    newErrors.name ||
+    newErrors.email ||
+    newErrors.password ||
+    newErrors.confirmPassword
+  ) {
+    return;
+  }
+
+  try {
+   const response = await fetch(
+  `${import.meta.env.VITE_SERVER_API_URL}/auth/register`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    }),
+  }
+);
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      alert(data.message || "Registration failed.");
       return;
     }
 
-    // User save
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-      })
-    );
+    console.log("REGISTER SUCCESS:", data);
 
-    // Login page
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    alert("Registration successful!");
+
     navigate("/login");
-  };
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
+    alert("Server se connection nahi ho raha.");
+  }
+};
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">
