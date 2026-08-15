@@ -1,91 +1,142 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import ProductSection from "./ProductSection";
 import api from "../config/api";
 
 function Shop() {
-  // ==========================================
+  // =====================================================
+  // URL SEARCH PARAMS
+  // =====================================================
+
+  const [searchParams] = useSearchParams();
+
+  // =====================================================
   // PRODUCTS
-  // ==========================================
+  // =====================================================
 
   const [products, setProducts] = useState([]);
 
-  // ==========================================
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // =====================================================
   // CATEGORIES
-  // ==========================================
+  // =====================================================
 
   const [categories, setCategories] = useState([]);
 
-  // ==========================================
+  // =====================================================
   // SELECTED CATEGORY
-  // ==========================================
+  // =====================================================
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // ==========================================
+  // =====================================================
+  // LOADING
+  // =====================================================
+
+  const [loading, setLoading] = useState(false);
+
+  // =====================================================
+  // ERROR
+  // =====================================================
+
+  const [error, setError] = useState("");
+
+  // =====================================================
+  // PRODUCTS PER PAGE
+  // =====================================================
+
+  const productsPerPage = 8;
+
+  // =====================================================
+  // SEARCH TERM
+  // =====================================================
+
+  const searchTerm = searchParams.get("search") || "";
+
+  // =====================================================
   // CATEGORY IMAGE URL
-  // ==========================================
+  // =====================================================
 
-  const categoryImageUrl =
-    import.meta.env.VITE_SERVER_CATEGORY_IMAGE_URL;
+  const categoryImageUrl = import.meta.env.VITE_SERVER_CATEGORY_IMAGE_URL;
 
-  // ==========================================
-  // DEBUG
-  // ==========================================
-
-  console.log(
-    "Category Image Base URL:",
-    categoryImageUrl
-  );
-
-  // ==========================================
-  // GET PRODUCTS + CATEGORIES
-  // ==========================================
+  // =====================================================
+  // GET PRODUCTS FROM BACKEND
+  // =====================================================
 
   useEffect(() => {
     document.title = "Shop - Apple Blossom";
 
-    // ========================================
-    // GET PRODUCTS
-    // ========================================
+    const getProducts = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-    api
-      .get("/products")
-      .then((response) => {
-        console.log(
-          "Products from API:",
-          response.data
-        );
+        console.log("Getting products:", currentPage, productsPerPage);
 
-        if (Array.isArray(response.data.data)) {
-          setProducts(response.data.data);
-        } else if (Array.isArray(response.data)) {
-          setProducts(response.data);
+        const response = await api.get("/products", {
+          params: {
+            page: currentPage,
+            limit: productsPerPage,
+          },
+        });
+
+        console.log("Products API Response:", response.data);
+
+        const data = response.data;
+
+        // =============================================
+        // PRODUCTS
+        // =============================================
+
+        if (Array.isArray(data.data)) {
+          setProducts(data.data);
+        } else if (Array.isArray(data)) {
+          setProducts(data);
         } else {
           setProducts([]);
         }
-      })
-      .catch((error) => {
-        console.error(
-          "Product API Error:",
-          error
-        );
+
+        // =============================================
+        // TOTAL PRODUCTS
+        // =============================================
+
+        setTotalProducts(Number(data.total || 0));
+
+        // =============================================
+        // TOTAL PAGES
+        // =============================================
+
+        setTotalPages(Number(data.totalPages || 1));
+      } catch (err) {
+        console.error("Product API Error:", err);
 
         setProducts([]);
-      });
+        setTotalProducts(0);
+        setTotalPages(1);
 
-    // ========================================
-    // GET CATEGORIES
-    // ========================================
+        setError("Products load nahi ho pa rahe hain.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    api
-      .get("/categories")
-      .then((response) => {
-        console.log(
-          "Categories from API:",
-          response.data
-        );
+    getProducts();
+  }, [currentPage]);
+
+  // =====================================================
+  // GET CATEGORIES
+  // =====================================================
+
+  useEffect(() => {
+    const getCategories = async () => {
+      try {
+        const response = await api.get("/categories");
+
+        console.log("Categories API Response:", response.data);
 
         if (Array.isArray(response.data.data)) {
           setCategories(response.data.data);
@@ -94,56 +145,67 @@ function Shop() {
         } else {
           setCategories([]);
         }
-      })
-      .catch((error) => {
-        console.error(
-          "Category API Error:",
-          error
-        );
+      } catch (err) {
+        console.error("Category API Error:", err);
 
         setCategories([]);
-      });
+      }
+    };
+
+    getCategories();
   }, []);
 
-  // ==========================================
-  // FILTER PRODUCTS
-  // ==========================================
+  // =====================================================
+  // CATEGORY CHANGE
+  // =====================================================
 
-  const filteredProducts =
-    selectedCategory === "All"
-      ? products
-      : products.filter(
-          (product) =>
-            product.category === selectedCategory
-        );
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
 
-  // ==========================================
+    // Category change => Page 1
+    setCurrentPage(1);
+  };
+
+  // =====================================================
+  // PAGE CHANGE
+  // =====================================================
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) {
+      return;
+    }
+
+    setCurrentPage(page);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  // =====================================================
   // CATEGORY FILTER BUTTONS
-  // ==========================================
+  // =====================================================
 
   const categoryFilters = [
     "All",
-    ...categories.map(
-      (category) => category.name
-    ),
+    ...categories.map((category) => category.name),
   ];
 
-  // ==========================================
+  // =====================================================
   // RETURN
-  // ==========================================
+  // =====================================================
 
   return (
     <section className="w-full bg-[#d9f0fb] py-6 sm:py-8 lg:py-10">
-
-      {/* ======================================
+      {/* =================================================
           MAIN CONTAINER
-      ====================================== */}
+      ================================================= */}
 
       <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16">
-
-        {/* ====================================
+        {/* =================================================
             CATEGORY CARDS
-        ==================================== */}
+        ================================================= */}
 
         <div
           className="
@@ -162,33 +224,14 @@ function Shop() {
             2xl:gap-12
           "
         >
-
           {categories.map((item) => {
-
-            // ==================================
-            // IMAGE URL
-            // ==================================
-
-            const imageUrl =
-              `${categoryImageUrl}/${item.image}`;
-
-            console.log(
-              "Category:",
-              item.name
-            );
-
-            console.log(
-              "Category Image:",
-              imageUrl
-            );
+            const imageUrl = `${categoryImageUrl}/${item.image}`;
 
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() =>
-                  setSelectedCategory(item.name)
-                }
+                onClick={() => handleCategoryChange(item.name)}
                 className={`
                   flex w-full flex-col items-center
                   rounded-3xl border p-4
@@ -201,10 +244,7 @@ function Shop() {
                   }
                 `}
               >
-
-                {/* ==================================
-                    CATEGORY IMAGE
-                ================================== */}
+                {/* IMAGE */}
 
                 <div
                   className="
@@ -222,7 +262,6 @@ function Shop() {
                     2xl:h-[220px]
                   "
                 >
-
                   <img
                     src={imageUrl}
                     alt={item.name}
@@ -237,19 +276,10 @@ function Shop() {
                       xl:max-h-[150px]
                       2xl:max-h-[175px]
                     "
-                    onError={(event) => {
-                      console.error(
-                        "IMAGE LOAD ERROR:",
-                        imageUrl
-                      );
-                    }}
                   />
-
                 </div>
 
-                {/* ==================================
-                    CATEGORY NAME
-                ================================== */}
+                {/* CATEGORY NAME */}
 
                 <h2
                   className="
@@ -267,16 +297,14 @@ function Shop() {
                 >
                   {item.name}
                 </h2>
-
               </button>
             );
           })}
-
         </div>
 
-        {/* ====================================
+        {/* =================================================
             CATEGORY FILTER BUTTONS
-        ==================================== */}
+        ================================================= */}
 
         <div
           className="
@@ -288,53 +316,64 @@ function Shop() {
             pb-8
           "
         >
-
           {categoryFilters.map((category) => (
-
             <button
               key={category}
               type="button"
-              onClick={() =>
-                setSelectedCategory(category)
-              }
+              onClick={() => handleCategoryChange(category)}
               className={`
-                rounded-full
-                px-5
-                py-3
-                text-sm
-                font-semibold
-                transition
-                duration-300
+                  rounded-full
+                  px-5
+                  py-3
+                  text-sm
+                  font-semibold
+                  transition
+                  duration-300
 
-                ${
-                  selectedCategory === category
-                    ? "bg-sky-700 text-white"
-                    : "bg-sky-100 text-slate-700 hover:bg-sky-200"
-                }
-              `}
+                  ${
+                    selectedCategory === category
+                      ? "bg-sky-700 text-white"
+                      : "bg-sky-100 text-slate-700 hover:bg-sky-200"
+                  }
+                `}
             >
               {category}
             </button>
-
           ))}
-
         </div>
-
       </div>
 
-      {/* ======================================
+      {/* =================================================
           PRODUCTS
-      ====================================== */}
+      ================================================= */}
 
       <div className="mt-8 w-full">
+        {error ? (
+          <div className="mx-auto max-w-xl rounded-2xl bg-white p-8 text-center">
+            <p className="text-red-600 font-semibold">{error}</p>
 
-        <ProductSection
-          products={filteredProducts}
-          selectedCategory={selectedCategory}
-        />
-
+            <button
+              type="button"
+              onClick={() => setCurrentPage(currentPage)}
+              className="mt-5 rounded-lg bg-cyan-800 px-6 py-3 text-white"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <ProductSection
+            products={products}
+            selectedCategory={selectedCategory}
+            onCategoryChange={handleCategoryChange}
+            searchTerm={searchTerm}
+            loading={loading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalProducts={totalProducts}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
-
     </section>
   );
 }

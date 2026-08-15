@@ -1,24 +1,29 @@
-import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+
+import { Link } from "react-router-dom";
 
 function ProductSection({
   products = [],
   selectedCategory = "All",
   onCategoryChange,
   filterData = {},
+
+  // Backend pagination
+  searchTerm = "",
+  loading = false,
+  currentPage = 1,
+  totalPages = 1,
+  totalProducts = 0,
+  onPageChange,
 }) {
+  // =====================================================
+  // IMAGE URL
+  // =====================================================
+
   const imageURL = import.meta.env.VITE_SERVER_IMAGES_URL;
 
-  const [searchParams] = useSearchParams();
-
   // =====================================================
-  // SEARCH FROM HEADER
-  // =====================================================
-
-  const searchTerm = searchParams.get("search") || "";
-
-  // =====================================================
-  // FILTER VALUES
+  // FILTER DATA
   // =====================================================
 
   const categories = filterData.categories?.length
@@ -179,14 +184,6 @@ function ProductSection({
   const [showMorePatterns, setShowMorePatterns] = useState(false);
 
   // =====================================================
-  // PAGINATION
-  // =====================================================
-
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const productsPerPage = 8;
-
-  // =====================================================
   // PRICE
   // =====================================================
 
@@ -230,7 +227,7 @@ function ProductSection({
   ];
 
   // =====================================================
-  // RATING
+  // RATINGS
   // =====================================================
 
   const ratings = [
@@ -245,7 +242,7 @@ function ProductSection({
   ];
 
   // =====================================================
-  // DISCOUNT
+  // DISCOUNTS
   // =====================================================
 
   const discounts = [
@@ -289,7 +286,7 @@ function ProductSection({
   };
 
   // =====================================================
-  // CHECKBOX TOGGLE
+  // CHECKBOX
   // =====================================================
 
   const toggleCheckbox = (value, setter, currentValues) => {
@@ -298,9 +295,32 @@ function ProductSection({
     } else {
       setter([...currentValues, value]);
     }
-
-    setCurrentPage(1);
   };
+
+  // =====================================================
+  // RESET PAGE WHEN FILTER CHANGES
+  // =====================================================
+
+  useEffect(() => {
+    if (onPageChange) {
+      onPageChange(1);
+    }
+  }, [
+    selectedBrands,
+    selectedColors,
+    selectedFabrics,
+    selectedSizes,
+    selectedPatterns,
+    selectedGenders,
+    selectedFits,
+    selectedOccasions,
+    selectedPrice,
+    selectedRating,
+    selectedDiscount,
+    selectedOffers,
+    newArrivals,
+    includeOutOfStock,
+  ]);
 
   // =====================================================
   // FILTER PRODUCTS
@@ -309,15 +329,15 @@ function ProductSection({
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // =================================================
+    // ================================================
     // SEARCH
-    // =================================================
+    // ================================================
 
-    if (searchTerm.trim()) {
+    if (searchTerm && searchTerm.trim()) {
       const searchText = searchTerm.toLowerCase().trim();
 
       result = result.filter((product) => {
-        const name = String(product.name || "").toLowerCase();
+        const name = String(product.name || product.title || "").toLowerCase();
 
         const category = String(product.category || "").toLowerCase();
 
@@ -331,6 +351,8 @@ function ProductSection({
 
         const pattern = String(product.pattern || "").toLowerCase();
 
+        const description = String(product.description || "").toLowerCase();
+
         return (
           name.includes(searchText) ||
           category.includes(searchText) ||
@@ -338,14 +360,15 @@ function ProductSection({
           gender.includes(searchText) ||
           color.includes(searchText) ||
           fabric.includes(searchText) ||
-          pattern.includes(searchText)
+          pattern.includes(searchText) ||
+          description.includes(searchText)
         );
       });
     }
 
-    // =================================================
+    // ================================================
     // CATEGORY
-    // =================================================
+    // ================================================
 
     if (selectedCategory && selectedCategory !== "All") {
       result = result.filter(
@@ -353,41 +376,41 @@ function ProductSection({
       );
     }
 
-    // =================================================
+    // ================================================
     // BRAND
-    // =================================================
+    // ================================================
 
-    if (selectedBrands.length > 0) {
+    if (selectedBrands.length) {
       result = result.filter((product) =>
         selectedBrands.includes(product.brand),
       );
     }
 
-    // =================================================
+    // ================================================
     // COLOR
-    // =================================================
+    // ================================================
 
-    if (selectedColors.length > 0) {
+    if (selectedColors.length) {
       result = result.filter((product) =>
         selectedColors.includes(product.color),
       );
     }
 
-    // =================================================
+    // ================================================
     // FABRIC
-    // =================================================
+    // ================================================
 
-    if (selectedFabrics.length > 0) {
+    if (selectedFabrics.length) {
       result = result.filter((product) =>
         selectedFabrics.includes(product.fabric),
       );
     }
 
-    // =================================================
+    // ================================================
     // SIZE
-    // =================================================
+    // ================================================
 
-    if (selectedSizes.length > 0) {
+    if (selectedSizes.length) {
       result = result.filter((product) => {
         if (Array.isArray(product.size)) {
           return product.size.some((size) =>
@@ -407,47 +430,47 @@ function ProductSection({
       });
     }
 
-    // =================================================
+    // ================================================
     // PATTERN
-    // =================================================
+    // ================================================
 
-    if (selectedPatterns.length > 0) {
+    if (selectedPatterns.length) {
       result = result.filter((product) =>
         selectedPatterns.includes(product.pattern),
       );
     }
 
-    // =================================================
+    // ================================================
     // GENDER
-    // =================================================
+    // ================================================
 
-    if (selectedGenders.length > 0) {
+    if (selectedGenders.length) {
       result = result.filter((product) =>
         selectedGenders.includes(product.gender),
       );
     }
 
-    // =================================================
+    // ================================================
     // FIT
-    // =================================================
+    // ================================================
 
-    if (selectedFits.length > 0) {
+    if (selectedFits.length) {
       result = result.filter((product) => selectedFits.includes(product.fit));
     }
 
-    // =================================================
+    // ================================================
     // OCCASION
-    // =================================================
+    // ================================================
 
-    if (selectedOccasions.length > 0) {
+    if (selectedOccasions.length) {
       result = result.filter((product) =>
         selectedOccasions.includes(product.occasion),
       );
     }
 
-    // =================================================
+    // ================================================
     // PRICE
-    // =================================================
+    // ================================================
 
     if (selectedPrice) {
       const range = priceOptions.find((item) => item.value === selectedPrice);
@@ -461,9 +484,9 @@ function ProductSection({
       }
     }
 
-    // =================================================
+    // ================================================
     // RATING
-    // =================================================
+    // ================================================
 
     if (selectedRating) {
       result = result.filter(
@@ -471,9 +494,9 @@ function ProductSection({
       );
     }
 
-    // =================================================
+    // ================================================
     // DISCOUNT
-    // =================================================
+    // ================================================
 
     if (selectedDiscount) {
       result = result.filter((product) => {
@@ -491,11 +514,11 @@ function ProductSection({
       });
     }
 
-    // =================================================
+    // ================================================
     // OFFERS
-    // =================================================
+    // ================================================
 
-    if (selectedOffers.length > 0) {
+    if (selectedOffers.length) {
       result = result.filter((product) => {
         const offer = product.offerType || product.offer || "";
 
@@ -505,9 +528,9 @@ function ProductSection({
       });
     }
 
-    // =================================================
+    // ================================================
     // NEW ARRIVALS
-    // =================================================
+    // ================================================
 
     if (newArrivals) {
       result = result.filter(
@@ -516,9 +539,9 @@ function ProductSection({
       );
     }
 
-    // =================================================
+    // ================================================
     // AVAILABILITY
-    // =================================================
+    // ================================================
 
     if (!includeOutOfStock) {
       result = result.filter((product) => {
@@ -526,7 +549,11 @@ function ProductSection({
           return true;
         }
 
-        return product.inStock === true || product.inStock === "true";
+        return (
+          product.inStock === true ||
+          product.inStock === "true" ||
+          product.inStock === 1
+        );
       });
     }
 
@@ -552,52 +579,58 @@ function ProductSection({
   ]);
 
   // =====================================================
-  // RESET PAGE WHEN FILTER CHANGES
+  // PAGE NUMBERS
   // =====================================================
 
-  useMemo(() => {
-    if (
-      currentPage >
-      Math.max(1, Math.ceil(filteredProducts.length / productsPerPage))
-    ) {
-      setCurrentPage(1);
-    }
-  }, [filteredProducts.length, currentPage]);
+  const getPageNumbers = () => {
+    const pages = [];
 
-  // =====================================================
-  // PAGINATION
-  // =====================================================
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
 
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-
-  const lastProductIndex = currentPage * productsPerPage;
-
-  const firstProductIndex = lastProductIndex - productsPerPage;
-
-  const currentProducts = filteredProducts.slice(
-    firstProductIndex,
-    lastProductIndex,
-  );
-
-  // =====================================================
-  // PAGE CHANGE
-  // =====================================================
-
-  const handlePageChange = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > totalPages) {
-      return;
+      return pages;
     }
 
-    setCurrentPage(pageNumber);
+    pages.push(1);
 
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    if (currentPage > 3) {
+      pages.push("left-dots");
+    }
+
+    let startPage = Math.max(2, currentPage - 1);
+
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    if (currentPage === 1) {
+      startPage = 2;
+      endPage = 3;
+    }
+
+    if (currentPage === totalPages) {
+      startPage = totalPages - 2;
+
+      endPage = totalPages - 1;
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      if (i > 1 && i < totalPages) {
+        pages.push(i);
+      }
+    }
+
+    if (currentPage < totalPages - 2) {
+      pages.push("right-dots");
+    }
+
+    pages.push(totalPages);
+
+    return pages;
   };
 
   // =====================================================
-  // CLEAR ALL
+  // RESET FILTERS
   // =====================================================
 
   const resetFilters = () => {
@@ -619,15 +652,17 @@ function ProductSection({
     setNewArrivals(false);
     setIncludeOutOfStock(false);
 
-    setCurrentPage(1);
-
     if (onCategoryChange) {
       onCategoryChange("All");
+    }
+
+    if (onPageChange) {
+      onPageChange(1);
     }
   };
 
   // =====================================================
-  // CLEAR INDIVIDUAL FILTER
+  // CLEAR CATEGORY
   // =====================================================
 
   const clearCategory = () => {
@@ -635,7 +670,9 @@ function ProductSection({
       onCategoryChange("All");
     }
 
-    setCurrentPage(1);
+    if (onPageChange) {
+      onPageChange(1);
+    }
   };
 
   // =====================================================
@@ -657,11 +694,11 @@ function ProductSection({
           <button
             type="button"
             onClick={() => toggleSection(section)}
-            className="flex-1 flex items-center justify-between text-left"
+            className="flex flex-1 items-center justify-between text-left"
           >
             <span className="text-lg font-bold text-slate-800">{title}</span>
 
-            <span className="text-2xl text-slate-500 mr-2">
+            <span className="mr-2 text-2xl text-slate-500">
               {isOpen ? "−" : "+"}
             </span>
           </button>
@@ -687,12 +724,12 @@ function ProductSection({
   // =====================================================
 
   const CheckboxOption = ({ label, checked, onChange }) => (
-    <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+    <label className="flex cursor-pointer items-center gap-3 py-1.5">
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="w-5 h-5 accent-cyan-800 cursor-pointer"
+        className="h-5 w-5 cursor-pointer accent-cyan-800"
       />
 
       <span className="text-[15px] text-slate-700">{label}</span>
@@ -704,13 +741,13 @@ function ProductSection({
   // =====================================================
 
   const RadioOption = ({ label, checked, onChange, name }) => (
-    <label className="flex items-center gap-3 py-1.5 cursor-pointer">
+    <label className="flex cursor-pointer items-center gap-3 py-1.5">
       <input
         type="radio"
         name={name}
         checked={checked}
         onChange={onChange}
-        className="w-5 h-5 accent-cyan-800 cursor-pointer"
+        className="h-5 w-5 cursor-pointer accent-cyan-800"
       />
 
       <span className="text-[15px] text-slate-700">{label}</span>
@@ -718,20 +755,43 @@ function ProductSection({
   );
 
   // =====================================================
+  // CURRENT PAGE PRODUCT RANGE
+  // =====================================================
+
+  const productsPerPage = 8;
+
+  const firstProductIndex = (currentPage - 1) * productsPerPage;
+
+  const lastProductIndex = firstProductIndex + productsPerPage;
+
+  // =====================================================
+  // NOTE
+  // =====================================================
+  //
+  // Backend already gives us current page products.
+  //
+  // Therefore DON'T use:
+  //
+  // filteredProducts.slice(...)
+  //
+  // =====================================================
+
+  const currentProducts = filteredProducts;
+
+  // =====================================================
   // RETURN
   // =====================================================
 
   return (
     <section className="bg-sky-50 p-4 sm:p-6 lg:p-10">
-      <div className="bg-cyan-800 rounded-3xl p-4 sm:p-6">
-        <br/>
-        <div className="grid grid-cols-1 lg:grid-cols-[350px_minmax(0,1fr)] gap-8">
+      <div className="rounded-3xl bg-cyan-800 p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[350px_minmax(0,1fr)]">
           {/* =================================================
-              LEFT FILTER
+              FILTER SIDEBAR
           ================================================= */}
 
-          <aside className="bg-white rounded-2xl p-6 sm:p-7 h-fit lg:sticky lg:top-24 max-h-[calc(100vh-120px)] overflow-y-auto">
-            {/* FILTER HEADER */}
+          <aside className="h-fit max-h-[calc(100vh-120px)] overflow-y-auto rounded-2xl bg-white p-6 sm:p-7 lg:sticky lg:top-24">
+            {/* HEADER */}
 
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-slate-800">Filters</h3>
@@ -745,13 +805,13 @@ function ProductSection({
               </button>
             </div>
 
-            {/* SEARCH RESULT */}
+            {/* SEARCH */}
 
             {searchTerm && (
               <div className="mt-4 rounded-lg bg-sky-50 p-3">
                 <p className="text-xs text-slate-500">Search results for</p>
 
-                <p className="font-semibold text-cyan-800 break-words">
+                <p className="break-words font-semibold text-cyan-800">
                   "{searchTerm}"
                 </p>
               </div>
@@ -770,7 +830,7 @@ function ProductSection({
               {categories.map((category) => (
                 <label
                   key={category}
-                  className="flex items-center gap-3 py-2 cursor-pointer"
+                  className="flex cursor-pointer items-center gap-3 py-2"
                 >
                   <input
                     type="radio"
@@ -781,9 +841,11 @@ function ProductSection({
                         onCategoryChange(category);
                       }
 
-                      setCurrentPage(1);
+                      if (onPageChange) {
+                        onPageChange(1);
+                      }
                     }}
-                    className="w-5 h-5 accent-cyan-800"
+                    className="h-5 w-5 accent-cyan-800"
                   />
 
                   <span
@@ -824,7 +886,7 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() => setShowMoreBrands(!showMoreBrands)}
-                  className="text-cyan-700 font-semibold text-sm mt-2 hover:underline"
+                  className="mt-2 text-sm font-semibold text-cyan-700 hover:underline"
                 >
                   {showMoreBrands ? "Show Less" : `${brands.length - 6} MORE`}
                 </button>
@@ -856,7 +918,7 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() => setShowMoreColors(!showMoreColors)}
-                  className="text-cyan-700 font-semibold text-sm mt-2 hover:underline"
+                  className="mt-2 text-sm font-semibold text-cyan-700 hover:underline"
                 >
                   {showMoreColors ? "Show Less" : `${colors.length - 6} MORE`}
                 </button>
@@ -894,7 +956,7 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() => setShowMoreFabrics(!showMoreFabrics)}
-                  className="text-cyan-700 font-semibold text-sm mt-2 hover:underline"
+                  className="mt-2 text-sm font-semibold text-cyan-700 hover:underline"
                 >
                   {showMoreFabrics ? "Show Less" : `${fabrics.length - 6} MORE`}
                 </button>
@@ -954,7 +1016,7 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() => setShowMorePatterns(!showMorePatterns)}
-                  className="text-cyan-700 font-semibold text-sm mt-2 hover:underline"
+                  className="mt-2 text-sm font-semibold text-cyan-700 hover:underline"
                 >
                   {showMorePatterns
                     ? "Show Less"
@@ -1049,10 +1111,7 @@ function ProductSection({
                   name="price"
                   label={price.label}
                   checked={selectedPrice === price.value}
-                  onChange={() => {
-                    setSelectedPrice(price.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={() => setSelectedPrice(price.value)}
                 />
               ))}
             </FilterSection>
@@ -1073,10 +1132,7 @@ function ProductSection({
                   name="rating"
                   label={rating.label}
                   checked={selectedRating === rating.value}
-                  onChange={() => {
-                    setSelectedRating(rating.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={() => setSelectedRating(rating.value)}
                 />
               ))}
             </FilterSection>
@@ -1097,10 +1153,7 @@ function ProductSection({
                   name="discount"
                   label={discount.label}
                   checked={Number(selectedDiscount) === discount.value}
-                  onChange={() => {
-                    setSelectedDiscount(discount.value);
-                    setCurrentPage(1);
-                  }}
+                  onChange={() => setSelectedDiscount(discount.value)}
                 />
               ))}
             </FilterSection>
@@ -1140,10 +1193,7 @@ function ProductSection({
               <CheckboxOption
                 label="New Arrivals"
                 checked={newArrivals}
-                onChange={() => {
-                  setNewArrivals(!newArrivals);
-                  setCurrentPage(1);
-                }}
+                onChange={() => setNewArrivals(!newArrivals)}
               />
             </FilterSection>
 
@@ -1160,10 +1210,7 @@ function ProductSection({
               <CheckboxOption
                 label="Include Out of Stock"
                 checked={includeOutOfStock}
-                onChange={() => {
-                  setIncludeOutOfStock(!includeOutOfStock);
-                  setCurrentPage(1);
-                }}
+                onChange={() => setIncludeOutOfStock(!includeOutOfStock)}
               />
             </FilterSection>
 
@@ -1172,14 +1219,14 @@ function ProductSection({
             <button
               type="button"
               onClick={resetFilters}
-              className="w-full mt-6 bg-cyan-800 text-white py-3 rounded-lg font-semibold hover:bg-cyan-950 duration-200"
+              className="mt-6 w-full rounded-lg bg-cyan-800 py-3 font-semibold text-white duration-200 hover:bg-cyan-950"
             >
               Clear All Filters
             </button>
           </aside>
 
           {/* =================================================
-              RIGHT PRODUCT AREA
+              RIGHT SIDE
           ================================================= */}
 
           <div className="min-w-0">
@@ -1198,17 +1245,28 @@ function ProductSection({
                     : `Showing ${selectedCategory} products.`}
               </p>
 
+              {/* DATABASE TOTAL */}
+
               <p className="mt-2 text-sm text-slate-200">
-                {filteredProducts.length} products found
+                {totalProducts} products in database
               </p>
             </div>
-            <br/>
 
             {/* =================================================
-                NO PRODUCTS
+                LOADING
             ================================================= */}
 
-            {filteredProducts.length === 0 ? (
+            {loading ? (
+              <div className="rounded-3xl bg-white p-14 text-center">
+                <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-cyan-800" />
+
+                <p className="mt-4 text-slate-600">Loading products...</p>
+              </div>
+            ) : filteredProducts.length === 0 ? (
+              /* =================================================
+                  NO PRODUCTS
+              ================================================= */
+
               <div className="rounded-3xl bg-white p-14 text-center">
                 <h3 className="text-2xl font-semibold text-slate-800">
                   No products found
@@ -1221,18 +1279,19 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={resetFilters}
-                  className="mt-5 bg-cyan-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-cyan-950"
+                  className="mt-5 rounded-lg bg-cyan-800 px-6 py-3 font-semibold text-white hover:bg-cyan-950"
                 >
                   Clear Filters
                 </button>
               </div>
             ) : (
               <>
+                <br />
                 {/* =================================================
-                    PRODUCTS
+                    PRODUCTS GRID
                 ================================================= */}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                   {currentProducts.map((item) => {
                     const price = Number(item.price || 0);
 
@@ -1250,35 +1309,35 @@ function ProductSection({
                         to={`/product/${item.id}`}
                         className="block"
                       >
-                        <div className="rounded-xl overflow-hidden hover:scale-[1.03] duration-300 cursor-pointer bg-white h-full flex flex-col justify-between shadow-md">
+                        <div className="flex h-full flex-col justify-between overflow-hidden rounded-xl bg-white shadow-md duration-300 hover:scale-[1.03]">
                           {/* IMAGE */}
 
                           <div className="relative">
                             <img
                               src={`${imageURL}/${item.image}`}
-                              alt={item.name || "Product"}
-                              className="w-full h-72 sm:h-80 object-cover"
+                              alt={item.name || item.title || "Product"}
+                              className="h-72 w-full object-cover sm:h-80"
                             />
 
                             {hasOldPrice && (
-                              <span className="absolute top-3 left-3 bg-red-600 text-white text-sm font-bold px-3 py-1 rounded-full">
+                              <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">
                                 {discount}% OFF
                               </span>
                             )}
                           </div>
 
-                          {/* PRODUCT INFO */}
+                          {/* INFO */}
 
                           <div className="p-4 text-center">
                             <p className="text-sm text-slate-500">
                               {item.category}
                             </p>
 
-                            <h2 className="text-slate-900 text-xl font-semibold mt-1">
-                              {item.name}
+                            <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                              {item.name || item.title}
                             </h2>
 
-                            <div className="flex items-center justify-center gap-3 mt-3">
+                            <div className="mt-3 flex items-center justify-center gap-3">
                               <span className="text-lg font-bold text-slate-900">
                                 ₹{item.price}
                               </span>
@@ -1291,13 +1350,13 @@ function ProductSection({
                             </div>
 
                             {hasOldPrice && (
-                              <p className="text-green-600 font-semibold mt-2">
+                              <p className="mt-2 font-semibold text-green-600">
                                 {item.offer || `${discount}% OFF`}
                               </p>
                             )}
 
                             {item.rating && (
-                              <p className="mt-2 text-sm text-yellow-600 font-semibold">
+                              <p className="mt-2 text-sm font-semibold text-yellow-600">
                                 ★ {item.rating}
                               </p>
                             )}
@@ -1307,22 +1366,23 @@ function ProductSection({
                     );
                   })}
                 </div>
-<br/><br/>
-                {/* =================================================
-                    PAGINATION
-                ================================================= */}
 
+                {/* =================================================
+                    BACKEND PAGINATION
+                ================================================= */}
+                <br />
+                <br />
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
+                  <div className="mt-12 flex flex-wrap items-center justify-center gap-2">
                     {/* PREVIOUS */}
 
                     <button
                       type="button"
-                      onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`px-4 py-2 rounded-lg font-semibold ${
+                      onClick={() => onPageChange(currentPage - 1)}
+                      className={`rounded-lg px-4 py-2 font-semibold transition ${
                         currentPage === 1
-                          ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                          ? "cursor-not-allowed bg-slate-300 text-slate-500"
                           : "bg-white text-cyan-800 hover:bg-cyan-100"
                       }`}
                     >
@@ -1331,35 +1391,43 @@ function ProductSection({
 
                     {/* PAGE NUMBERS */}
 
-                    {Array.from(
-                      {
-                        length: totalPages,
-                      },
-                      (_, index) => index + 1,
-                    ).map((pageNumber) => (
-                      <button
-                        type="button"
-                        key={pageNumber}
-                        onClick={() => handlePageChange(pageNumber)}
-                        className={`px-4 py-2 rounded-lg font-semibold ${
-                          currentPage === pageNumber
-                            ? "bg-cyan-950 text-white"
-                            : "bg-white text-cyan-800 hover:bg-cyan-100"
-                        }`}
-                      >
-                        {pageNumber}
-                      </button>
-                    ))}
+                    {getPageNumbers().map((page, index) => {
+                      if (typeof page === "string") {
+                        return (
+                          <span
+                            key={`${page}-${index}`}
+                            className="px-3 py-2 font-bold text-white"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          key={page}
+                          onClick={() => onPageChange(page)}
+                          className={`min-w-[42px] rounded-lg px-4 py-2 font-semibold transition ${
+                            currentPage === page
+                              ? "bg-cyan-950 text-white"
+                              : "bg-white text-cyan-800 hover:bg-cyan-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
 
                     {/* NEXT */}
 
                     <button
                       type="button"
-                      onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`px-4 py-2 rounded-lg font-semibold ${
+                      onClick={() => onPageChange(currentPage + 1)}
+                      className={`rounded-lg px-4 py-2 font-semibold transition ${
                         currentPage === totalPages
-                          ? "bg-slate-300 text-slate-500 cursor-not-allowed"
+                          ? "cursor-not-allowed bg-slate-300 text-slate-500"
                           : "bg-white text-cyan-800 hover:bg-cyan-100"
                       }`}
                     >
@@ -1368,9 +1436,24 @@ function ProductSection({
                   </div>
                 )}
 
-                <p className="text-center text-white pt-4">
-                  Page {currentPage} of {totalPages}
-                </p>
+                {/* =================================================
+                    PAGE INFO
+                ================================================= */}
+
+                {totalPages > 1 && (
+                  <div className="pb-3 pt-5 text-center text-white">
+                    <p>
+                      Page <span className="font-bold">{currentPage}</span> of{" "}
+                      <span className="font-bold">{totalPages}</span>
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-200">
+                      Showing {firstProductIndex + 1}-
+                      {Math.min(lastProductIndex, totalProducts)} of{" "}
+                      {totalProducts} products
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
