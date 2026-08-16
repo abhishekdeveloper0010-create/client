@@ -75,7 +75,9 @@ function ProductDetail() {
           }
 
           if (Array.isArray(sizes) && sizes.length > 0) {
-            setSelectedSize(sizes[0]);
+            setSelectedSize(
+              typeof sizes[0] === "object" ? sizes[0].size : sizes[0],
+            );
           }
         }
       } catch (error) {
@@ -240,23 +242,54 @@ function ProductDetail() {
       return;
     }
 
-    const wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    let wishlist = [];
 
-    const alreadyExists = wishlist.some(
-      (item) => Number(item) === Number(product.id),
+    try {
+      wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+    } catch {
+      wishlist = [];
+    }
+
+    // Old wishlist format agar IDs me hai
+    // to unko safely remove/ignore karenge
+    wishlist = wishlist.filter(
+      (item) => item && typeof item === "object" && item.id !== undefined,
     );
 
-    if (!alreadyExists) {
-      wishlist.push(product.id);
+    // Check duplicate
+    const alreadyExists = wishlist.some(
+      (item) => Number(item.id) === Number(product.id),
+    );
 
-      localStorage.setItem("wishlist", JSON.stringify(wishlist));
-
-      window.dispatchEvent(new Event("wishlistChanged"));
-
-      alert("Product added to wishlist!");
-    } else {
+    if (alreadyExists) {
       alert("Product already in wishlist.");
+      return;
     }
+
+    // Complete product object save hoga
+    const wishlistProduct = {
+      id: product.id,
+      title: productName,
+      name: productName,
+      description: product.description || "",
+      image: selectedImage || product.image || "",
+      images: productImages,
+      price: product.price || 0,
+      oldPrice: oldPrice || 0,
+      offer: product.offer || "",
+      category: product.category || "",
+      brand: product.brand || "",
+      rating: product.rating || "",
+    };
+
+    wishlist.push(wishlistProduct);
+
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+
+    // Header / Wishlist page ko update signal
+    window.dispatchEvent(new Event("wishlistChanged"));
+
+    alert("Product added to wishlist!");
   };
 
   // =========================
@@ -292,7 +325,6 @@ function ProductDetail() {
   const addToCart = () => {
     const user = getCurrentUser();
 
-    // Login check
     if (!user) {
       askLogin();
       return;
@@ -356,53 +388,42 @@ function ProductDetail() {
   // BUY NOW
   // =========================
 
-const buyNow = () => {
-  const user = getCurrentUser();
+  const buyNow = () => {
+    const user = getCurrentUser();
 
-  // Login check
-  if (!user) {
-    askLogin();
-    return;
-  }
+    if (!user) {
+      askLogin();
+      return;
+    }
 
-  // Size check
-  if (!checkSize()) {
-    return;
-  }
+    // Size check
+    if (!checkSize()) {
+      return;
+    }
 
-  // Stock check
-  if (!checkStock()) {
-    return;
-  }
+    // Stock check
+    if (!checkStock()) {
+      return;
+    }
 
-  // Product data check
-  console.log("FULL PRODUCT DATA:", product);
+    const checkoutProduct = {
+      id: product.id,
+      title: productName,
+      name: productName,
+      description: product.description,
+      image: selectedImage,
+      price: product.price,
+      oldPrice: oldPrice,
+      offer: product.offer,
+      category: product.category,
+      size: selectedSize,
+      quantity: 1,
+    };
 
-  const checkoutProduct = {
-    id: product.id,
-    title: productName,
-    name: productName,
-    description: product.description,
-    image: selectedImage,
-    price: product.price,
-    oldPrice: oldPrice,
-    offer: product.offer,
-    category: product.category,
-    size: selectedSize,
-    quantity: 1,
+    localStorage.setItem("buyNowProduct", JSON.stringify(checkoutProduct));
+
+    navigate("/checkout");
   };
-
-  // Save Buy Now product
-  localStorage.setItem(
-    "buyNowProduct",
-    JSON.stringify(checkoutProduct)
-  );
-
-  console.log("Buy Now Product:", checkoutProduct);
-
-  // Go to checkout
-  navigate("/checkout");
-};
 
   // =========================
   // DISABLE BUTTON
@@ -443,13 +464,13 @@ const buyNow = () => {
                 ) : (
                   <div
                     className="
-                    h-72
-                    sm:h-96
-                    lg:h-[550px]
-                    flex
-                    items-center
-                    justify-center
-                  "
+                      h-72
+                      sm:h-96
+                      lg:h-[550px]
+                      flex
+                      items-center
+                      justify-center
+                    "
                   >
                     <p className="text-gray-500">No image available</p>
                   </div>
@@ -461,12 +482,12 @@ const buyNow = () => {
               {productImages.length > 0 && (
                 <div
                   className="
-                  flex
-                  gap-3
-                  pt-5
-                  overflow-x-auto
-                  pb-2
-                "
+                    flex
+                    gap-3
+                    pt-5
+                    overflow-x-auto
+                    pb-2
+                  "
                 >
                   {productImages.map((image, index) => (
                     <img
@@ -504,12 +525,7 @@ const buyNow = () => {
               {/* CATEGORY */}
 
               {product.category && (
-                <p
-                  className="
-                  text-gray-500
-                  text-lg
-                "
-                >
+                <p className="text-gray-500 text-lg">
                   Category:{" "}
                   <span className="font-semibold">{product.category}</span>
                 </p>
@@ -519,12 +535,12 @@ const buyNow = () => {
 
               <h1
                 className="
-                text-3xl
-                sm:text-4xl
-                font-bold
-                text-gray-800
-                pt-2
-              "
+                  text-3xl
+                  sm:text-4xl
+                  font-bold
+                  text-gray-800
+                  pt-2
+                "
               >
                 {productName}
               </h1>
@@ -534,11 +550,11 @@ const buyNow = () => {
               {product.description && (
                 <p
                   className="
-                  pt-4
-                  text-gray-600
-                  text-lg
-                  leading-7
-                "
+                    pt-4
+                    text-gray-600
+                    text-lg
+                    leading-7
+                  "
                 >
                   {product.description}
                 </p>
@@ -547,12 +563,7 @@ const buyNow = () => {
               {/* BRAND */}
 
               {product.brand && (
-                <p
-                  className="
-                  text-gray-500
-                  pt-3
-                "
-                >
+                <p className="text-gray-500 pt-3">
                   Brand: <span className="font-semibold">{product.brand}</span>
                 </p>
               )}
@@ -562,10 +573,10 @@ const buyNow = () => {
               {product.rating && (
                 <p
                   className="
-                  mt-3
-                  text-gray-700
-                  font-semibold
-                "
+                    mt-3
+                    text-gray-700
+                    font-semibold
+                  "
                 >
                   ⭐ {product.rating}
                 </p>
@@ -575,20 +586,20 @@ const buyNow = () => {
 
               <div
                 className="
-                flex
-                items-center
-                gap-4
-                pt-6
-                pb-4
-              "
+                  flex
+                  items-center
+                  gap-4
+                  pt-6
+                  pb-4
+                "
               >
                 <span
                   className="
-                  text-3xl
-                  sm:text-4xl
-                  font-bold
-                  text-gray-900
-                "
+                    text-3xl
+                    sm:text-4xl
+                    font-bold
+                    text-gray-900
+                  "
                 >
                   ₹{product.price}
                 </span>
@@ -596,10 +607,10 @@ const buyNow = () => {
                 {oldPrice && (
                   <span
                     className="
-                    text-xl
-                    text-gray-400
-                    line-through
-                  "
+                      text-xl
+                      text-gray-400
+                      line-through
+                    "
                   >
                     ₹{oldPrice}
                   </span>
@@ -611,67 +622,43 @@ const buyNow = () => {
               {product.offer && (
                 <div
                   className="
-                  mt-3
-                  inline-block
-                  bg-green-100
-                  text-green-700
-                  px-4
-                  py-2
-                  rounded-lg
-                  font-bold
-                "
+                    mt-3
+                    inline-block
+                    bg-green-100
+                    text-green-700
+                    px-4
+                    py-2
+                    rounded-lg
+                    font-bold
+                  "
                 >
                   {product.offer}
                 </div>
               )}
 
-              {/* DISCOUNT
-
-              {oldPrice &&
-                Number(oldPrice) >
-                  Number(product.price) && (
-                  <p className="
-                    text-green-600
-                    font-semibold
-                    mt-3
-                  ">
-                    {Math.round(
-                      (
-                        (Number(oldPrice) -
-                          Number(product.price)) /
-                        Number(oldPrice)
-                      ) * 100
-                    )}
-                    % OFF
-                  </p>
-                )} */}
-
-              {/* =========================
-                  SIZE
-              ========================= */}
+              {/* SIZE */}
 
               {productSizes.length > 0 && (
                 <div className="pt-8">
                   <h3
                     className="
-                    text-xl
-                    font-bold
-                    text-gray-800
-                  "
+                      text-xl
+                      font-bold
+                      text-gray-800
+                    "
                   >
                     Select Size
                   </h3>
 
                   <div
                     className="
-                    flex
-                    flex-wrap
-                    gap-3
-                    pt-2
-                  "
+                      flex
+                      flex-wrap
+                      gap-3
+                      pt-2
+                    "
                   >
                     {productSizes.map((size, index) => {
-                      // Agar size object hai
                       const sizeValue =
                         typeof size === "object" ? size.size : size;
 
@@ -687,7 +674,6 @@ const buyNow = () => {
                               border-2
                               font-semibold
                               cursor-pointer
-
                               ${
                                 selectedSize === sizeValue
                                   ? "bg-sky-600 text-white border-sky-600"
@@ -702,19 +688,9 @@ const buyNow = () => {
                   </div>
 
                   {selectedSize && (
-                    <p
-                      className="
-                      mt-3
-                      text-gray-600
-                    "
-                    >
+                    <p className="mt-3 text-gray-600">
                       Selected Size:{" "}
-                      <span
-                        className="
-                        font-bold
-                        text-sky-600
-                      "
-                      >
+                      <span className="font-bold text-sky-600">
                         {selectedSize}
                       </span>
                     </p>
@@ -722,84 +698,47 @@ const buyNow = () => {
                 </div>
               )}
 
-              {/* =========================
-                  STOCK
-              ========================= */}
+              {/* STOCK */}
 
               <div className="pt-7">
                 {Number(product.stock) > 0 ? (
-                  <p
-                    className="
-                    text-green-600
-                    font-semibold
-                  "
-                  >
+                  <p className="text-green-600 font-semibold">
                     ✓ In Stock ({product.stock})
                   </p>
                 ) : (
-                  <p
-                    className="
-                    text-red-600
-                    font-semibold
-                  "
-                  >
-                    ✕ Out of Stock
-                  </p>
+                  <p className="text-red-600 font-semibold">✕ Out of Stock</p>
                 )}
               </div>
 
-              {/* =========================
-                  DELIVERY
-              ========================= */}
+              {/* DELIVERY */}
 
               <div
                 className="
-                mt-7
-                bg-gray-100
-                rounded-2xl
-                p-5
-              "
+                  mt-7
+                  bg-gray-100
+                  rounded-2xl
+                  p-5
+                "
               >
-                <h3
-                  className="
-                  font-bold
-                  text-lg
-                "
-                >
-                  Delivery Details
-                </h3>
+                <h3 className="font-bold text-lg">Delivery Details</h3>
 
-                <p
-                  className="
-                  text-gray-600
-                  mt-2
-                "
-                >
-                  Free Delivery Available
-                </p>
+                <p className="text-gray-600 mt-2">Free Delivery Available</p>
 
-                <p
-                  className="
-                  text-gray-600
-                  mt-1
-                "
-                >
+                <p className="text-gray-600 mt-1">
                   Estimated Delivery: 3-5 Days
                 </p>
               </div>
 
-              {/* =========================
-                  BUTTONS
-              ========================= */}
+              {/* BUTTONS */}
 
               <div
                 className="
-                grid
-                grid-cols-1
-                sm:grid-cols-3
-                gap-3
-                pt-8
-              "
+                  grid
+                  grid-cols-1
+                  sm:grid-cols-3
+                  gap-3
+                  pt-8
+                "
               >
                 {/* WISHLIST */}
 
@@ -817,7 +756,7 @@ const buyNow = () => {
                     cursor-pointer
                   "
                 >
-                  Wishlist
+                  ♡ Wishlist
                 </button>
 
                 {/* ADD TO CART */}
