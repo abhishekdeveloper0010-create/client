@@ -2,18 +2,29 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function Checkout() {
-  // =========================
+  // =====================================================
   // ENV
-  // =========================
+  // =====================================================
 
-  const IMAGE_URL = import.meta.env.VITE_SERVER_IMAGES_URL;
+  const API_URL =
+    import.meta.env.VITE_SERVER_API_URL ||
+    "http://localhost:4000/api";
 
-  // =========================
+  const IMAGE_URL =
+    import.meta.env.VITE_SERVER_IMAGES_URL ||
+    "http://localhost:4000/uploads";
+
+  const navigate = useNavigate();
+
+  // =====================================================
   // STATES
-  // =========================
+  // =====================================================
 
   const [cart, setCart] = useState([]);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
+
+  const [loading, setLoading] = useState(false);
 
   const [shipping, setShipping] = useState({
     name: "",
@@ -26,6 +37,7 @@ function Checkout() {
   });
 
   const [paymentMethod, setPaymentMethod] = useState("card");
+
   const [paymentMessage, setPaymentMessage] = useState("");
 
   const [paymentDetails, setPaymentDetails] = useState({
@@ -37,18 +49,28 @@ function Checkout() {
     codNote: "",
   });
 
-  const navigate = useNavigate();
+  // =====================================================
+  // GET TOKEN
+  // =====================================================
 
-  // =========================
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("accessToken") ||
+      ""
+    );
+  };
+
+  // =====================================================
   // GET IMAGE URL
-  // =========================
+  // =====================================================
 
   const getImageURL = (image) => {
     if (!image) {
       return "";
     }
 
-    // Agar already complete URL hai
     if (
       image.startsWith("http://") ||
       image.startsWith("https://")
@@ -56,42 +78,65 @@ function Checkout() {
       return image;
     }
 
-    // Server image
     return `${IMAGE_URL}/${image}`;
   };
 
-  // =========================
+  // =====================================================
   // GET CHECKOUT DATA
-  // =========================
+  // =====================================================
 
   useEffect(() => {
-    const buyNowProduct = JSON.parse(
-      localStorage.getItem("buyNowProduct")
-    );
+    try {
+      const buyNowProduct = JSON.parse(
+        localStorage.getItem("buyNowProduct")
+      );
 
-    const cartData =
-      JSON.parse(localStorage.getItem("cart")) || [];
+      const cartData =
+        JSON.parse(localStorage.getItem("cart")) || [];
 
-    console.log("Buy Now Product:", buyNowProduct);
-    console.log("Cart Data:", cartData);
+      console.log(
+        "CHECKOUT - BUY NOW PRODUCT:",
+        buyNowProduct
+      );
 
-    // Buy Now ko priority
-    if (buyNowProduct) {
-      setCart([buyNowProduct]);
-    } else {
-      setCart(cartData);
+      console.log(
+        "CHECKOUT - CART DATA:",
+        cartData
+      );
+
+      // Buy Now priority
+      if (buyNowProduct) {
+        setCart([
+          {
+            ...buyNowProduct,
+            quantity: buyNowProduct.quantity || 1,
+          },
+        ]);
+      } else {
+        setCart(cartData);
+      }
+    } catch (error) {
+      console.error(
+        "CHECKOUT DATA ERROR:",
+        error
+      );
+
+      setCart([]);
     }
   }, []);
 
-  // =========================
+  // =====================================================
   // PRICE CALCULATION
-  // =========================
+  // =====================================================
 
   const subtotal = cart.reduce(
-    (total, item) =>
-      total +
-      Number(item.price || 0) *
-        Number(item.quantity || 1),
+    (total, item) => {
+      return (
+        total +
+        Number(item.price || 0) *
+          Number(item.quantity || 1)
+      );
+    },
     0
   );
 
@@ -99,9 +144,9 @@ function Checkout() {
 
   const total = subtotal + delivery;
 
-  // =========================
+  // =====================================================
   // SHIPPING INPUT
-  // =========================
+  // =====================================================
 
   const handleInput = (event) => {
     const { name, value } = event.target;
@@ -112,9 +157,9 @@ function Checkout() {
     }));
   };
 
-  // =========================
+  // =====================================================
   // PAYMENT INPUT
-  // =========================
+  // =====================================================
 
   const handlePaymentDetail = (event) => {
     const { name, value } = event.target;
@@ -125,20 +170,51 @@ function Checkout() {
     }));
   };
 
-  // =========================
+  // =====================================================
   // PLACE ORDER
-  // =========================
+  // =====================================================
 
-  const placeOrder = (event) => {
+  const placeOrder = async (event) => {
     event.preventDefault();
 
+    // Clear previous message
+    setPaymentMessage("");
+
+    // ===================================================
+    // CHECK CART
+    // ===================================================
+
     if (cart.length === 0) {
+      setPaymentMessage(
+        "Your cart is empty."
+      );
+
       return;
     }
 
-    // =========================
+    // ===================================================
+    // TOKEN
+    // ===================================================
+
+    const token = getToken();
+
+    console.log(
+      "CHECKOUT TOKEN EXISTS:",
+      Boolean(token)
+    );
+
+    if (!token) {
+      setPaymentMessage(
+        "Please login before placing an order."
+      );
+
+      navigate("/login");
+      return;
+    }
+
+    // ===================================================
     // PAYMENT METHOD
-    // =========================
+    // ===================================================
 
     const methodLabel =
       paymentMethod === "card"
@@ -147,16 +223,18 @@ function Checkout() {
         ? "UPI"
         : "Cash on Delivery";
 
-    // =========================
+    // ===================================================
     // CARD VALIDATION
-    // =========================
+    // ===================================================
 
     if (
       paymentMethod === "card" &&
-      (!paymentDetails.cardNumber ||
+      (
+        !paymentDetails.cardNumber ||
         !paymentDetails.cardName ||
         !paymentDetails.expiry ||
-        !paymentDetails.cvv)
+        !paymentDetails.cvv
+      )
     ) {
       setPaymentMessage(
         "Please complete your card details before placing the order."
@@ -165,9 +243,9 @@ function Checkout() {
       return;
     }
 
-    // =========================
+    // ===================================================
     // UPI VALIDATION
-    // =========================
+    // ===================================================
 
     if (
       paymentMethod === "upi" &&
@@ -180,9 +258,9 @@ function Checkout() {
       return;
     }
 
-    // =========================
+    // ===================================================
     // PAYMENT INFO
-    // =========================
+    // ===================================================
 
     const paymentInfo =
       paymentMethod === "card"
@@ -210,138 +288,367 @@ function Checkout() {
               "Pay at delivery",
           };
 
-    setPaymentMessage(
-      `Payment selected: ${methodLabel}`
+    // ===================================================
+    // CONVERT CART → API ITEMS
+    // ===================================================
+
+    const items = cart.map((item) => ({
+      productId:
+        item.productId ||
+        item.product_id ||
+        item.id,
+
+      productName:
+        item.productName ||
+        item.product_name ||
+        item.name ||
+        item.title ||
+        "Product",
+
+      productImage:
+        item.productImage ||
+        item.product_image ||
+        item.image ||
+        null,
+
+      price:
+        Number(item.price || 0),
+
+      quantity:
+        Number(item.quantity || 1),
+
+      size:
+        item.size || null,
+
+      color:
+        item.color || null,
+    }));
+
+    // ===================================================
+    // VALIDATE PRODUCT IDs
+    // ===================================================
+
+    const invalidProduct = items.find(
+      (item) => !item.productId
     );
 
-    // =========================
-    // ORDER DATA
-    // =========================
+    if (invalidProduct) {
+      setPaymentMessage(
+        "Product information is missing. Please go back and add the product again."
+      );
+
+      return;
+    }
+
+    // ===================================================
+    // API ORDER DATA
+    // ===================================================
 
     const orderData = {
-      id: `ORD-${Date.now()}`,
+      items,
 
-      status: "Packed",
+      subtotal,
 
-      placedAt:
-        new Date().toLocaleDateString(),
+      deliveryCharge: delivery,
 
-      total: total,
-
-      subtotal: subtotal,
-
-      delivery: delivery,
+      totalAmount: total,
 
       paymentMethod: methodLabel,
 
+      // Current checkout does not have saved address ID.
+      // Backend accepts null.
+      addressId: null,
+
+      // Shipping information is sent too.
+      // If your backend later supports order shipping
+      // fields, these can be stored there.
+      shipping: {
+        name: shipping.name,
+        email: shipping.email,
+        phone: shipping.phone,
+        address: shipping.address,
+        city: shipping.city,
+        state: shipping.state,
+        pin: shipping.pin,
+      },
+
       paymentDetails: paymentInfo,
-
-      // Shipping
-      address: shipping.address,
-
-      city: shipping.city,
-
-      state: shipping.state,
-
-      pin: shipping.pin,
-
-      customerName: shipping.name,
-
-      phone: shipping.phone,
-
-      email: shipping.email,
-
-      // Products
-      products: cart,
     };
 
-    console.log("ORDER DATA:", orderData);
-
-    // =========================
-    // SAVE ORDER
-    // =========================
-
-    const existingOrders =
-      JSON.parse(
-        localStorage.getItem("orders")
-      ) || [];
-
-    existingOrders.unshift(orderData);
-
-    localStorage.setItem(
-      "orders",
-      JSON.stringify(existingOrders)
+    console.log(
+      "================================="
     );
 
-    // =========================
-    // CLEAR CART
-    // =========================
-
-    localStorage.removeItem("cart");
-
-    // Buy Now bhi clear karo
-    localStorage.removeItem(
-      "buyNowProduct"
+    console.log(
+      "ORDER DATA SENT TO SERVER:",
+      orderData
     );
 
-    // =========================
-    // CART STATE CLEAR
-    // =========================
+    console.log(
+      "================================="
 
-    setCart([]);
-
-    // =========================
-    // ORDER SUCCESS
-    // =========================
-
-    setOrderPlaced(true);
-
-    // Cart icon update
-    window.dispatchEvent(
-      new Event("cartChanged")
     );
+
+    // ===================================================
+    // API REQUEST
+    // ===================================================
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${API_URL}/orders`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${token}`,
+          },
+
+          body:
+            JSON.stringify(orderData),
+        }
+      );
+
+      // =================================================
+      // RESPONSE TEXT FIRST
+      // =================================================
+
+      const responseText =
+        await response.text();
+
+      console.log(
+        "ORDER API RAW RESPONSE:",
+        responseText
+      );
+
+      let result;
+
+      try {
+        result =
+          JSON.parse(responseText);
+      } catch (parseError) {
+        console.error(
+          "ORDER API JSON PARSE ERROR:",
+          parseError
+        );
+
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      console.log(
+        "ORDER API RESPONSE:",
+        result
+      );
+
+      // =================================================
+      // API ERROR
+      // =================================================
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.message ||
+            "Failed to place order"
+        );
+      }
+
+      // =================================================
+      // SERVER ORDER
+      // =================================================
+
+      const serverOrder =
+        result.order;
+
+      console.log(
+        "================================="
+      );
+
+      console.log(
+        "ORDER CREATED IN DATABASE:",
+        serverOrder
+      );
+
+      console.log(
+        "================================="
+      );
+
+      // =================================================
+      // LOCAL UI ORDER
+      // =================================================
+
+      const uiOrder = {
+        ...serverOrder,
+
+        products: cart,
+
+        items: items,
+
+        customerName:
+          shipping.name,
+
+        name:
+          shipping.name,
+
+        email:
+          shipping.email,
+
+        phone:
+          shipping.phone,
+
+        address:
+          shipping.address,
+
+        city:
+          shipping.city,
+
+        state:
+          shipping.state,
+
+        pin:
+          shipping.pin,
+
+        paymentMethod:
+          methodLabel,
+
+        paymentDetails:
+          paymentInfo,
+      };
+
+      setPlacedOrder(uiOrder);
+
+      // =================================================
+      // CLEAR CART
+      // =================================================
+
+      localStorage.removeItem(
+        "cart"
+      );
+
+      localStorage.removeItem(
+        "buyNowProduct"
+      );
+
+      // =================================================
+      // CLEAR CART STATE
+      // =================================================
+
+      setCart([]);
+
+      // =================================================
+      // CART EVENT
+      // =================================================
+
+      window.dispatchEvent(
+        new Event("cartChanged")
+      );
+
+      // =================================================
+      // SUCCESS
+      // =================================================
+
+      setPaymentMessage(
+        "Order placed successfully!"
+      );
+
+      setOrderPlaced(true);
+
+    } catch (error) {
+      console.error(
+        "PLACE ORDER ERROR:",
+        error
+      );
+
+      setPaymentMessage(
+        error.message ||
+          "Failed to place order. Please try again."
+      );
+
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // =========================
-  // JSX
-  // =========================
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
     <div className="min-h-screen w-full bg-gray-100 p-4 sm:p-6 md:p-8 lg:p-10 xl:p-12 2xl:p-16">
 
       <div className="w-full">
 
-        {/* =========================
+        {/* =================================================
             TITLE
-        ========================= */}
+        ================================================= */}
 
         <h1 className="pb-6 text-3xl font-bold text-gray-700 sm:text-4xl lg:text-5xl">
           Checkout
         </h1>
 
-        {/* =========================
+        {/* =================================================
             ORDER CONFIRMED
-        ========================= */}
+        ================================================= */}
 
         {orderPlaced ? (
 
           <div className="w-full rounded-3xl bg-white p-6 shadow-sm sm:p-8 lg:p-10">
 
-            <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-              Order Confirmed
-            </h2>
+            <div className="mb-6">
 
-            <p className="mt-3 text-gray-600">
-              Thank you for your purchase.
-              Your order is being processed and
-              will be shipped soon.
-            </p>
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">
+                ✓
+              </div>
+
+              <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
+                Order Confirmed
+              </h2>
+
+              <p className="mt-3 text-gray-600">
+                Thank you for your purchase.
+                Your order has been successfully
+                placed and is now being processed.
+              </p>
+
+            </div>
+
+            {/* ORDER NUMBER */}
+
+            {placedOrder?.orderNumber && (
+              <div className="mb-6 rounded-2xl bg-slate-50 p-5">
+
+                <p className="text-sm text-gray-500">
+                  Order Number
+                </p>
+
+                <p className="mt-1 text-xl font-bold text-gray-800">
+                  {placedOrder.orderNumber}
+                </p>
+
+                <p className="mt-2 text-gray-600">
+                  Total: ₹
+                  {Number(
+                    placedOrder.total || 0
+                  )}
+                </p>
+
+              </div>
+            )}
+
+            {/* BUTTONS */}
 
             <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
 
               <button
                 type="button"
-                onClick={() => navigate("/")}
+                onClick={() =>
+                  navigate("/")
+                }
                 className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700"
               >
                 Continue Shopping
@@ -350,16 +657,18 @@ function Checkout() {
               <button
                 type="button"
                 onClick={() =>
-                  navigate("/order-tracking")
+                  navigate(
+                    "/order-tracking"
+                  )
                 }
                 className="inline-flex items-center justify-center rounded-xl border border-sky-600 px-6 py-3 font-semibold text-sky-600 hover:bg-sky-50"
               >
-                View Order Track
+                View Order Tracking
               </button>
 
               <Link
                 to="/"
-                className="inline-flex items-center justify-center rounded-xl border border-sky-600 px-6 py-3 font-semibold text-sky-600 hover:bg-sky-50"
+                className="inline-flex items-center justify-center rounded-xl border border-gray-300 px-6 py-3 font-semibold text-gray-600 hover:bg-gray-50"
               >
                 Back to Home
               </Link>
@@ -372,21 +681,15 @@ function Checkout() {
 
           <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3">
 
-            {/* =========================
+            {/* =================================================
                 SHIPPING + PAYMENT
-            ========================= */}
+            ================================================= */}
 
             <div className="w-full rounded-3xl bg-white p-4 shadow-sm sm:p-6 lg:col-span-2 lg:p-8">
 
-              <h2 className="mb-4 text-2xl font-bold text-gray-700">
+              <h2 className="mb-6 text-2xl font-bold text-gray-700">
                 Shipping & Payment
               </h2>
-
-              <br />
-
-              {/* =========================
-                  EMPTY CHECKOUT
-              ========================= */}
 
               {cart.length === 0 ? (
 
@@ -399,7 +702,7 @@ function Checkout() {
 
                   <Link
                     to="/shop"
-                    className="mt-6 inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700"
+                    className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700"
                   >
                     Browse Products
                   </Link>
@@ -413,9 +716,9 @@ function Checkout() {
                   className="space-y-6"
                 >
 
-                  {/* =========================
+                  {/* =================================================
                       NAME + EMAIL
-                  ========================= */}
+                  ================================================= */}
 
                   <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2">
 
@@ -455,9 +758,9 @@ function Checkout() {
 
                   </div>
 
-                  {/* =========================
+                  {/* =================================================
                       PHONE + PIN
-                  ========================= */}
+                  ================================================= */}
 
                   <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2">
 
@@ -497,13 +800,13 @@ function Checkout() {
 
                   </div>
 
-                  {/* =========================
+                  {/* =================================================
                       ADDRESS
-                  ========================= */}
+                  ================================================= */}
 
                   <label className="block">
 
-                    <span className="pb-4 text-sm font-semibold text-gray-600">
+                    <span className="text-sm font-semibold text-gray-600">
                       Address
                     </span>
 
@@ -518,9 +821,9 @@ function Checkout() {
 
                   </label>
 
-                  {/* =========================
+                  {/* =================================================
                       CITY + STATE
-                  ========================= */}
+                  ================================================= */}
 
                   <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2">
 
@@ -560,9 +863,9 @@ function Checkout() {
 
                   </div>
 
-                  {/* =========================
+                  {/* =================================================
                       PAYMENT
-                  ========================= */}
+                  ================================================= */}
 
                   <div className="rounded-3xl bg-slate-50 p-4 sm:p-5">
 
@@ -581,10 +884,13 @@ function Checkout() {
                           name="payment"
                           value="card"
                           checked={
-                            paymentMethod === "card"
+                            paymentMethod ===
+                            "card"
                           }
                           onChange={() =>
-                            setPaymentMethod("card")
+                            setPaymentMethod(
+                              "card"
+                            )
                           }
                           className="h-4 w-4"
                         />
@@ -594,7 +900,7 @@ function Checkout() {
                         </span>
 
                       </label>
-<br/>
+
                       {/* UPI */}
 
                       <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-gray-300 bg-white p-4">
@@ -604,10 +910,13 @@ function Checkout() {
                           name="payment"
                           value="upi"
                           checked={
-                            paymentMethod === "upi"
+                            paymentMethod ===
+                            "upi"
                           }
                           onChange={() =>
-                            setPaymentMethod("upi")
+                            setPaymentMethod(
+                              "upi"
+                            )
                           }
                           className="h-4 w-4"
                         />
@@ -617,7 +926,7 @@ function Checkout() {
                         </span>
 
                       </label>
-<br/>
+
                       {/* COD */}
 
                       <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-gray-300 bg-white p-4">
@@ -627,10 +936,13 @@ function Checkout() {
                           name="payment"
                           value="cod"
                           checked={
-                            paymentMethod === "cod"
+                            paymentMethod ===
+                            "cod"
                           }
                           onChange={() =>
-                            setPaymentMethod("cod")
+                            setPaymentMethod(
+                              "cod"
+                            )
                           }
                           className="h-4 w-4"
                         />
@@ -643,11 +955,12 @@ function Checkout() {
 
                     </div>
 
-                    {/* =========================
+                    {/* =================================================
                         CARD DETAILS
-                    ========================= */}
+                    ================================================= */}
 
-                    {paymentMethod === "card" && (
+                    {paymentMethod ===
+                      "card" && (
 
                       <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
 
@@ -744,11 +1057,12 @@ function Checkout() {
                       </div>
                     )}
 
-                    {/* =========================
+                    {/* =================================================
                         UPI
-                    ========================= */}
+                    ================================================= */}
 
-                    {paymentMethod === "upi" && (
+                    {paymentMethod ===
+                      "upi" && (
 
                       <label className="block pt-4 text-sm text-gray-600">
 
@@ -773,11 +1087,12 @@ function Checkout() {
                       </label>
                     )}
 
-                    {/* =========================
+                    {/* =================================================
                         COD
-                    ========================= */}
+                    ================================================= */}
 
-                    {paymentMethod === "cod" && (
+                    {paymentMethod ===
+                      "cod" && (
 
                       <label className="block pt-4 text-sm text-gray-600">
 
@@ -803,27 +1118,38 @@ function Checkout() {
 
                   </div>
 
-                  {/* =========================
+                  {/* =================================================
                       PAYMENT MESSAGE
-                  ========================= */}
+                  ================================================= */}
 
                   {paymentMessage && (
 
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <div
+                      className={`rounded-2xl border px-4 py-3 text-sm ${
+                        paymentMessage.includes(
+                          "successfully"
+                        )
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-red-200 bg-red-50 text-red-700"
+                      }`}
+                    >
                       {paymentMessage}
                     </div>
 
                   )}
 
-                  {/* =========================
+                  {/* =================================================
                       PLACE ORDER
-                  ========================= */}
+                  ================================================= */}
 
                   <button
                     type="submit"
-                    className="w-full rounded-2xl bg-sky-600 px-6 py-4 text-lg font-semibold text-white hover:bg-sky-700"
+                    disabled={loading}
+                    className="w-full rounded-2xl bg-sky-600 px-6 py-4 text-lg font-semibold text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Place Order
+                    {loading
+                      ? "Placing Order..."
+                      : "Place Order"}
                   </button>
 
                 </form>
@@ -831,9 +1157,9 @@ function Checkout() {
 
             </div>
 
-            {/* =========================
+            {/* =================================================
                 ORDER SUMMARY
-            ========================= */}
+            ================================================= */}
 
             <div className="w-full rounded-3xl bg-white p-4 shadow-sm sm:p-6">
 
@@ -843,130 +1169,111 @@ function Checkout() {
 
               <div className="space-y-4">
 
-                {/* =========================
-                    PRODUCTS
-                ========================= */}
+                {/* PRODUCTS */}
 
-                {cart.map((item, index) => (
+                {cart.map(
+                  (item, index) => (
 
-                  <div
-                    key={
-                      item.cartItemId ||
-                      `${item.id}-${index}`
-                    }
-                    className="rounded-3xl border border-gray-200 p-4"
-                  >
+                    <div
+                      key={
+                        item.cartItemId ||
+                        `${item.id}-${index}`
+                      }
+                      className="rounded-3xl border border-gray-200 p-4"
+                    >
 
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
 
-                      {/* SERVER IMAGE */}
+                        <img
+                          src={getImageURL(
+                            item.image ||
+                              item.productImage
+                          )}
+                          alt={
+                            item.title ||
+                            item.name ||
+                            "Product"
+                          }
+                          className="h-20 w-20 rounded-2xl object-cover"
+                          onError={(event) => {
+                            console.log(
+                              "IMAGE FAILED:",
+                              getImageURL(
+                                item.image ||
+                                  item.productImage
+                              )
+                            );
 
-                      <img
-                        src={getImageURL(
-                          item.image
-                        )}
-                        alt={
-                          item.title ||
-                          item.name ||
-                          "Product"
-                        }
-                        className="h-20 w-20 rounded-2xl object-cover"
-                        onError={(event) => {
-                          console.log(
-                            "Image failed:",
-                            getImageURL(item.image)
-                          );
+                            event.currentTarget.style.display =
+                              "none";
+                          }}
+                        />
 
-                          event.currentTarget.style.display =
-                            "none";
-                        }}
-                      />
+                        <div className="flex-1">
 
-                      <div className="flex-1">
+                          <h3 className="font-semibold text-gray-800">
+                            {item.title ||
+                              item.name ||
+                              "Product"}
+                          </h3>
 
-                        <h3 className="font-semibold text-gray-800">
-                          {item.title ||
-                            item.name}
-                        </h3>
+                          {item.size && (
+                            <p className="mt-1 text-gray-500">
+                              Size: {item.size}
+                            </p>
+                          )}
 
-                        {item.size && (
+                          {item.color && (
+                            <p className="mt-1 text-gray-500">
+                              Color: {item.color}
+                            </p>
+                          )}
 
                           <p className="mt-1 text-gray-500">
-                            Size: {item.size}
+                            Qty:{" "}
+                            {item.quantity ||
+                              1}
                           </p>
 
-                        )}
-
-                        <p className="mt-1 text-gray-500">
-                          Qty:{" "}
-                          {item.quantity || 1}
-                        </p>
-
-                        {/* CURRENT PRICE */}
-
-                        <p className="mt-2 font-semibold text-gray-700">
-                          ₹
-                          {Number(
-                            item.price || 0
-                          )}
-                        </p>
-
-                        {/* OLD PRICE */}
-
-                        {item.oldPrice && (
-
-                          <p className="text-sm text-gray-400 line-through">
+                          <p className="mt-2 font-semibold text-gray-700">
                             ₹
                             {Number(
-                              item.oldPrice
+                              item.price ||
+                                0
                             )}
                           </p>
 
-                        )}
+                          {item.oldPrice && (
+                            <p className="text-sm text-gray-400 line-through">
+                              ₹
+                              {Number(
+                                item.oldPrice
+                              )}
+                            </p>
+                          )}
 
-                        {/* OFFER */}
+                        </div>
 
-                        {item.offer && (
+                        <p className="text-lg font-semibold text-gray-700">
 
-                          <p className="text-sm font-bold text-green-600">
-                            {item.offer}
-                            {String(
-                              item.offer
-                            ).includes("%")
-                              ? ""
-                              : "%"}{" "}
-                           
-                          </p>
+                          ₹
+                          {Number(
+                            item.price || 0
+                          ) *
+                            Number(
+                              item.quantity ||
+                                1
+                            )}
 
-                        )}
+                        </p>
 
                       </div>
 
-                      {/* ITEM TOTAL */}
-
-                      <p className="text-lg font-semibold text-gray-700">
-
-                        ₹
-                        {Number(
-                          item.price || 0
-                        ) *
-                          Number(
-                            item.quantity || 1
-                          )}
-
-                      </p>
-
                     </div>
+                  )
+                )}
 
-                  </div>
-
-                ))}
-
-                <br />
-
-                {/* =========================
-                    PRICE SUMMARY
-                ========================= */}
+                {/* PRICE SUMMARY */}
 
                 <div className="rounded-3xl bg-slate-50 p-4">
 
