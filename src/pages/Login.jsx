@@ -1,110 +1,224 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  FaUser,
+  FaLock,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
 
 function Login() {
-  // Email aur Password values
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
 
-  // Separate Errors
   const [errors, setErrors] = useState({
     email: "",
     password: "",
   });
 
-  // Password show/hide
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  // Input change
+  // =====================================================
+  // INPUT CHANGE
+  // =====================================================
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    // Input value update
     setCredentials((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Jis field mein typing ho rahi hai uski error remove
     setErrors((prev) => ({
       ...prev,
       [name]: "",
     }));
   };
 
-  // Form Submit
- const handleSubmit = async (event) => {
-  event.preventDefault();
+  // =====================================================
+  // LOGIN
+  // =====================================================
 
-  const newErrors = {
-    email: "",
-    password: "",
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  if (!credentials.email.trim()) {
-    newErrors.email = "Please enter your email.";
-  }
+    const newErrors = {
+      email: "",
+      password: "",
+    };
 
-  if (!credentials.password.trim()) {
-    newErrors.password = "Please enter your password.";
-  }
+    if (!credentials.email.trim()) {
+      newErrors.email = "Please enter your email.";
+    }
 
-  setErrors(newErrors);
+    if (!credentials.password.trim()) {
+      newErrors.password = "Please enter your password.";
+    }
 
-  if (newErrors.email || newErrors.password) {
-    return;
-  }
+    setErrors(newErrors);
 
-  try {
-   const response = await fetch(
-  `${import.meta.env.VITE_SERVER_API_URL}/auth/login`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: credentials.email,
-      password: credentials.password,
-    }),
-  }
-);
-
-    const data = await response.json();
-
-    console.log("LOGIN RESPONSE:", data);
-
-    if (!response.ok) {
-      alert(data.message || "Login failed.");
+    if (newErrors.email || newErrors.password) {
       return;
     }
 
-    // JWT token save
-    localStorage.setItem("token", data.token);
+    try {
+      setLoading(true);
 
-    // Complete user data save
-    localStorage.setItem("user", JSON.stringify(data.user));
+      // ---------------------------------------------
+      // Remove old/expired token before login
+      // ---------------------------------------------
 
-    // Header/navbar ko update karne ke liye
-    window.dispatchEvent(new Event("authChanged"));
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("accessToken");
 
-    alert("Login successful!");
+      const API_URL =
+        import.meta.env.VITE_SERVER_API_URL ||
+        "http://localhost:4000/api";
 
-    navigate("/");
-  } catch (error) {
-    console.error("LOGIN ERROR:", error);
-    alert("Server se connection nahi ho raha.");
-  }
-};
+      console.log("LOGIN API:", `${API_URL}/auth/login`);
+
+      const response = await fetch(
+        `${API_URL}/auth/login`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            email: credentials.email.trim(),
+            password: credentials.password,
+          }),
+        }
+      );
+
+      console.log(
+        "LOGIN STATUS:",
+        response.status
+      );
+
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      let data;
+
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+
+        console.error(
+          "SERVER RESPONSE:",
+          text
+        );
+
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      console.log(
+        "LOGIN RESPONSE:",
+        data
+      );
+
+      // ---------------------------------------------
+      // LOGIN FAILED
+      // ---------------------------------------------
+
+      if (!response.ok) {
+        alert(
+          data.message ||
+            "Invalid email or password."
+        );
+
+        return;
+      }
+
+      // ---------------------------------------------
+      // TOKEN CHECK
+      // ---------------------------------------------
+
+      if (!data.token) {
+        console.error(
+          "TOKEN NOT RECEIVED:",
+          data
+        );
+
+        alert(
+          "Login successful but token was not received."
+        );
+
+        return;
+      }
+
+      // ---------------------------------------------
+      // SAVE TOKEN
+      // ---------------------------------------------
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      // ---------------------------------------------
+      // SAVE USER
+      // ---------------------------------------------
+
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      // ---------------------------------------------
+      // AUTH EVENT
+      // ---------------------------------------------
+
+      window.dispatchEvent(
+        new Event("authChanged")
+      );
+
+      alert("Login successful!");
+
+      // ---------------------------------------------
+      // HOME
+      // ---------------------------------------------
+
+      navigate("/");
+
+    } catch (error) {
+      console.error(
+        "LOGIN ERROR:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Server se connection nahi ho raha."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* Main Login Box */}
+
       <div
         className="
           relative w-full max-w-[1200px] min-h-[650px]
@@ -113,22 +227,30 @@ function Login() {
           shadow-[0_0_25px_rgba(34,211,238,0.35)]
         "
       >
-        {/* Left Background */}
+
+        {/* LEFT BACKGROUND */}
+
         <div className="absolute inset-0 bg-[#0d1f29]" />
 
-        {/* Right Gradient Background */}
+        {/* RIGHT BACKGROUND */}
+
         <div
           className="
             absolute inset-y-0 right-0 w-[82%]
             bg-gradient-to-r
-            from-[#163944] via-[#147584] to-[#20b8c6]
+            from-[#163944]
+            via-[#147584]
+            to-[#20b8c6]
             [clip-path:polygon(30%_0,100%_0,100%_100%,80%_100%)]
           "
         />
 
-        {/* Main Content */}
+        {/* MAIN CONTENT */}
+
         <div className="relative z-10 flex min-h-[650px]">
-          {/* LEFT LOGIN SECTION */}
+
+          {/* LEFT LOGIN */}
+
           <div
             className="
               w-full lg:w-[52%]
@@ -138,15 +260,19 @@ function Login() {
               lg:px-20 lg:pt-14 lg:pb-14
             "
           >
+
             <div className="w-full max-w-[400px]">
-              {/* Heading */}
+
               <h1 className="pb-10 pt-2 text-4xl font-bold text-white sm:text-5xl">
                 Login
               </h1>
 
               <form onSubmit={handleSubmit}>
-                {/* EMAIL FIELD */}
+
+                {/* EMAIL */}
+
                 <div className="pb-10">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Username
                   </label>
@@ -162,11 +288,15 @@ function Login() {
                       }
                     `}
                   >
-                    {/* User Icon - LEFT */}
+
                     <FaUser
                       className={`
                         shrink-0 text-lg
-                        ${errors.email ? "text-red-400" : "text-slate-300"}
+                        ${
+                          errors.email
+                            ? "text-red-400"
+                            : "text-slate-300"
+                        }
                       `}
                     />
 
@@ -183,16 +313,21 @@ function Login() {
                         placeholder:text-slate-500
                       "
                     />
+
                   </div>
 
-                  {/* Email Error */}
                   {errors.email && (
-                    <p className="mt-2 text-sm text-red-400">{errors.email}</p>
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.email}
+                    </p>
                   )}
+
                 </div>
 
-                {/* PASSWORD FIELD */}
+                {/* PASSWORD */}
+
                 <div className="pb-8">
+
                   <label className="block text-lg text-cyan-300">
                     Password
                   </label>
@@ -208,17 +343,24 @@ function Login() {
                       }
                     `}
                   >
-                    {/* Lock Icon - LEFT */}
+
                     <FaLock
                       className={`
                         shrink-0 text-lg
-                        ${errors.password ? "text-red-400" : "text-cyan-400"}
+                        ${
+                          errors.password
+                            ? "text-red-400"
+                            : "text-cyan-400"
+                        }
                       `}
                     />
 
-                    {/* Password Input */}
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={
+                        showPassword
+                          ? "text"
+                          : "password"
+                      }
                       name="password"
                       value={credentials.password}
                       onChange={handleChange}
@@ -231,10 +373,13 @@ function Login() {
                       "
                     />
 
-                    {/* Eye Icon - RIGHT */}
                     <button
                       type="button"
-                      onClick={() => setShowPassword((prev) => !prev)}
+                      onClick={() =>
+                        setShowPassword(
+                          (prev) => !prev
+                        )
+                      }
                       className="
                         shrink-0 text-lg text-cyan-400
                         hover:text-white
@@ -242,54 +387,76 @@ function Login() {
                         cursor-pointer
                       "
                       aria-label={
-                        showPassword ? "Hide password" : "Show password"
+                        showPassword
+                          ? "Hide password"
+                          : "Show password"
                       }
                     >
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      {showPassword ? (
+                        <FaEyeSlash />
+                      ) : (
+                        <FaEye />
+                      )}
                     </button>
+
                   </div>
 
-                  {/* Password Error */}
                   {errors.password && (
                     <p className="mt-2 text-sm text-red-400">
                       {errors.password}
                     </p>
                   )}
+
                 </div>
-                {/* Forgot Password */}
+
+                {/* FORGOT PASSWORD */}
+
                 <div className="pb-10 text-right">
+
                   <Link
                     to="/forgot-password"
                     className="
-                      text-1sm text-slate-300
+                      text-sm text-slate-300
                       hover:text-cyan-400
                       transition duration-300
                     "
                   >
                     Forgot Password?
                   </Link>
+
                 </div>
+
                 {/* LOGIN BUTTON */}
+
                 <button
                   type="submit"
+                  disabled={loading}
                   className="
                     mt-3 w-full rounded-full
                     border-2 border-cyan-300
                     bg-gradient-to-b
-                    from-[#38d4e5] to-[#08717e]
+                    from-[#38d4e5]
+                    to-[#08717e]
                     py-3 text-xl font-bold text-white
                     shadow-[0_4px_12px_rgba(34,211,238,0.35)]
                     transition duration-300
                     hover:scale-[1.02]
                     hover:shadow-[0_5px_20px_rgba(34,211,238,0.55)]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
                   "
                 >
-                  Login
+                  {loading
+                    ? "Logging in..."
+                    : "Login"}
                 </button>
 
-                {/* Sign Up */}
+                {/* SIGN UP */}
+
                 <p className="pt-5 text-center text-base text-slate-300">
+
                   Don't have an account?{" "}
+
                   <Link
                     to="/register"
                     className="
@@ -300,12 +467,17 @@ function Login() {
                   >
                     Sign Up
                   </Link>
+
                 </p>
+
               </form>
+
             </div>
+
           </div>
 
-          {/* RIGHT WELCOME SECTION */}
+          {/* RIGHT WELCOME */}
+
           <div
             className="
               hidden lg:flex
@@ -314,7 +486,9 @@ function Login() {
               px-12 pt-14 pb-14
             "
           >
+
             <div className="max-w-[340px] text-right">
+
               <h2 className="text-5xl font-bold leading-tight tracking-wide text-white">
                 WELCOME
                 <br />
@@ -328,10 +502,15 @@ function Login() {
                 <br />
                 Day
               </p>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
   );
 }

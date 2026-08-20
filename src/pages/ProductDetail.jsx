@@ -2,23 +2,26 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 function ProductDetail() {
-  // =========================
+  // =====================================================
   // URL PARAMETER
-  // =========================
+  // =====================================================
 
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // =========================
+  // =====================================================
   // ENV VARIABLES
-  // =========================
+  // =====================================================
 
-  const API_URL = import.meta.env.VITE_SERVER_API_URL;
-  const IMAGE_URL = import.meta.env.VITE_SERVER_IMAGES_URL;
+  const API_URL =
+    import.meta.env.VITE_SERVER_API_URL || "http://localhost:4000/api";
 
-  // =========================
+  const IMAGE_URL =
+    import.meta.env.VITE_SERVER_IMAGES_URL || "http://localhost:4000/uploads";
+
+  // =====================================================
   // STATES
-  // =========================
+  // =====================================================
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,42 +29,75 @@ function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState("");
   const [selectedSize, setSelectedSize] = useState("");
 
-  // =========================
+  // =====================================================
   // GET PRODUCT FROM SERVER
-  // =========================
+  // =====================================================
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
 
-        const response = await fetch(`${API_URL}/products/${id}`);
-
-        if (!response.ok) {
-          throw new Error("Product not found");
-        }
+        const response = await fetch(
+          `${API_URL.replace(/\/$/, "")}/products/${id}`
+        );
 
         const data = await response.json();
 
-        console.log("Product from server:", data);
-        console.log("Stock:", data.stock);
+        console.log("=================================");
+        console.log("PRODUCT API RESPONSE:", data);
+        console.log("=================================");
 
-        setProduct(data);
-
-        // =========================
-        // MAIN IMAGE
-        // =========================
-
-        if (data.image) {
-          setSelectedImage(data.image);
+        if (!response.ok) {
+          throw new Error(data.message || "Product not found");
         }
 
-        // =========================
-        // SIZE
-        // =========================
+        // =====================================================
+        // IMPORTANT:
+        // Backend response:
+        //
+        // {
+        //   success: true,
+        //   data: { ...product }
+        // }
+        // =====================================================
 
-        if (data.sizes) {
-          let sizes = data.sizes;
+        if (!data.success || !data.data) {
+          throw new Error(data.message || "Product not found");
+        }
+
+        const productData = data.data;
+
+        console.log("ACTUAL PRODUCT:", productData);
+        console.log("PRODUCT ID:", productData.id);
+        console.log("PRODUCT NAME:", productData.name);
+        console.log("PRODUCT PRICE:", productData.price);
+        console.log("PRODUCT IMAGE:", productData.image);
+        console.log("PRODUCT STOCK:", productData.stock);
+
+        // Set actual product
+        setProduct(productData);
+
+        // =====================================================
+        // MAIN IMAGE
+        // =====================================================
+
+        if (productData.image) {
+          setSelectedImage(productData.image);
+        } else if (
+          productData.images &&
+          Array.isArray(productData.images) &&
+          productData.images.length > 0
+        ) {
+          setSelectedImage(productData.images[0]);
+        }
+
+        // =====================================================
+        // SIZE
+        // =====================================================
+
+        if (productData.sizes) {
+          let sizes = productData.sizes;
 
           if (typeof sizes === "string") {
             try {
@@ -75,13 +111,16 @@ function ProductDetail() {
           }
 
           if (Array.isArray(sizes) && sizes.length > 0) {
-            setSelectedSize(
-              typeof sizes[0] === "object" ? sizes[0].size : sizes[0],
-            );
+            const firstSize =
+              typeof sizes[0] === "object"
+                ? sizes[0].size
+                : sizes[0];
+
+            setSelectedSize(firstSize || "");
           }
         }
       } catch (error) {
-        console.error("Product fetch error:", error);
+        console.error("PRODUCT FETCH ERROR:", error);
 
         setProduct(null);
       } finally {
@@ -89,45 +128,62 @@ function ProductDetail() {
       }
     };
 
-    fetchProduct();
+    if (id) {
+      fetchProduct();
+    }
   }, [id, API_URL]);
 
-  // =========================
+  // =====================================================
   // IMAGE URL
-  // =========================
+  // =====================================================
 
   const getImageURL = (image) => {
     if (!image) {
       return "";
     }
 
-    if (image.startsWith("http://") || image.startsWith("https://")) {
+    // Already complete URL
+    if (
+      image.startsWith("http://") ||
+      image.startsWith("https://")
+    ) {
       return image;
     }
 
-    return `${IMAGE_URL}/${image}`;
+    // Remove starting slash
+    const cleanImage = image.replace(/^\/+/, "");
+
+    return `${IMAGE_URL.replace(/\/$/, "")}/${cleanImage}`;
   };
 
-  // =========================
+  // =====================================================
   // LOADING
-  // =========================
+  // =====================================================
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-sky-50">
-        <h2 className="text-2xl font-bold text-gray-700">Loading product...</h2>
+        <h2 className="text-2xl font-bold text-gray-700">
+          Loading product...
+        </h2>
       </div>
     );
   }
 
-  // =========================
+  // =====================================================
   // PRODUCT NOT FOUND
-  // =========================
+  // =====================================================
 
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-sky-50">
-        <h1 className="text-3xl font-bold text-gray-700">Product Not Found</h1>
+        <h1 className="text-3xl font-bold text-gray-700">
+          Product Not Found
+        </h1>
+
+        <p className="mt-3 text-gray-500">
+          Product ID: {id}
+        </p>
 
         <button
           type="button"
@@ -141,6 +197,7 @@ function ProductDetail() {
             rounded-xl
             font-semibold
             hover:bg-sky-700
+            cursor-pointer
           "
         >
           Back to Shop
@@ -149,30 +206,40 @@ function ProductDetail() {
     );
   }
 
-  // =========================
+  // =====================================================
   // PRODUCT NAME
-  // =========================
+  // =====================================================
 
-  const productName = product.title || product.name || "Product";
+  const productName =
+    product.title || product.name || "Product";
 
-  // =========================
-  // OLD PRICE
-  // =========================
+  // =====================================================
+  // PRICE
+  // =====================================================
 
-  const oldPrice = product.oldPrice || product.old_price;
+  const price = Number(product.price || 0);
 
-  // =========================
+  const oldPrice =
+    product.oldPrice ||
+    product.old_price ||
+    null;
+
+  // =====================================================
   // PRODUCT IMAGES
-  // =========================
+  // =====================================================
 
   let productImages = [];
 
   if (product.images) {
     if (Array.isArray(product.images)) {
       productImages = product.images;
-    } else {
+    } else if (typeof product.images === "string") {
       try {
-        productImages = JSON.parse(product.images);
+        const parsedImages = JSON.parse(product.images);
+
+        if (Array.isArray(parsedImages)) {
+          productImages = parsedImages;
+        }
       } catch {
         productImages = product.images
           .split(",")
@@ -182,23 +249,30 @@ function ProductDetail() {
     }
   }
 
-  // Agar database me sirf image field hai
-  if (product.image && productImages.length === 0) {
+  // Database has only image field
+  if (
+    product.image &&
+    productImages.length === 0
+  ) {
     productImages = [product.image];
   }
 
-  // =========================
+  // =====================================================
   // PRODUCT SIZES
-  // =========================
+  // =====================================================
 
   let productSizes = [];
 
   if (product.sizes) {
     if (Array.isArray(product.sizes)) {
       productSizes = product.sizes;
-    } else {
+    } else if (typeof product.sizes === "string") {
       try {
-        productSizes = JSON.parse(product.sizes);
+        const parsedSizes = JSON.parse(product.sizes);
+
+        if (Array.isArray(parsedSizes)) {
+          productSizes = parsedSizes;
+        }
       } catch {
         productSizes = product.sizes
           .split(",")
@@ -208,31 +282,32 @@ function ProductDetail() {
     }
   }
 
-  // =========================
+  // =====================================================
   // USER
-  // =========================
+  // =====================================================
 
   const getCurrentUser = () => {
     try {
-      return JSON.parse(localStorage.getItem("user"));
+      return JSON.parse(
+        localStorage.getItem("user")
+      );
     } catch {
       return null;
     }
   };
 
-  // =========================
+  // =====================================================
   // LOGIN
-  // =========================
+  // =====================================================
 
   const askLogin = () => {
     alert("Please login or register first.");
-
     navigate("/login");
   };
 
-  // =========================
+  // =====================================================
   // WISHLIST
-  // =========================
+  // =====================================================
 
   const addToWishlist = () => {
     const user = getCurrentUser();
@@ -245,20 +320,26 @@ function ProductDetail() {
     let wishlist = [];
 
     try {
-      wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
+      wishlist =
+        JSON.parse(
+          localStorage.getItem("wishlist")
+        ) || [];
     } catch {
       wishlist = [];
     }
 
-    // Old wishlist format agar IDs me hai
-    // to unko safely remove/ignore karenge
+    // Keep valid objects only
     wishlist = wishlist.filter(
-      (item) => item && typeof item === "object" && item.id !== undefined,
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        item.id !== undefined
     );
 
     // Check duplicate
     const alreadyExists = wishlist.some(
-      (item) => Number(item.id) === Number(product.id),
+      (item) =>
+        Number(item.id) === Number(product.id)
     );
 
     if (alreadyExists) {
@@ -266,38 +347,65 @@ function ProductDetail() {
       return;
     }
 
-    // Complete product object save hoga
+    // Complete product object
     const wishlistProduct = {
       id: product.id,
+
       title: productName,
+
       name: productName,
-      description: product.description || "",
-      image: selectedImage || product.image || "",
+
+      description:
+        product.description || "",
+
+      image:
+        selectedImage ||
+        product.image ||
+        "",
+
       images: productImages,
-      price: product.price || 0,
-      oldPrice: oldPrice || 0,
-      offer: product.offer || "",
-      category: product.category || "",
-      brand: product.brand || "",
-      rating: product.rating || "",
+
+      price: price,
+
+      oldPrice:
+        oldPrice || 0,
+
+      offer:
+        product.offer || "",
+
+      category:
+        product.category || "",
+
+      brand:
+        product.brand || "",
+
+      rating:
+        product.rating || "",
     };
 
     wishlist.push(wishlistProduct);
 
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    localStorage.setItem(
+      "wishlist",
+      JSON.stringify(wishlist)
+    );
 
-    // Header / Wishlist page ko update signal
-    window.dispatchEvent(new Event("wishlistChanged"));
+    window.dispatchEvent(
+      new Event("wishlistChanged")
+    );
 
     alert("Product added to wishlist!");
   };
 
-  // =========================
+  // =====================================================
   // SIZE CHECK
-  // =========================
+  // =====================================================
 
   const checkSize = () => {
-    if (productSizes.length > 0 && !selectedSize) {
+    if (
+      productSizes.length > 0 &&
+      !selectedSize
+    ) {
       alert("Please select a size.");
       return false;
     }
@@ -305,12 +413,12 @@ function ProductDetail() {
     return true;
   };
 
-  // =========================
+  // =====================================================
   // STOCK CHECK
-  // =========================
+  // =====================================================
 
   const checkStock = () => {
-    if (Number(product.stock) <= 0) {
+    if (Number(product.stock || 0) <= 0) {
       alert("Product is out of stock.");
       return false;
     }
@@ -318,9 +426,9 @@ function ProductDetail() {
     return true;
   };
 
-  // =========================
+  // =====================================================
   // ADD TO CART
-  // =========================
+  // =====================================================
 
   const addToCart = () => {
     const user = getCurrentUser();
@@ -330,25 +438,34 @@ function ProductDetail() {
       return;
     }
 
-    // Size check
     if (!checkSize()) {
       return;
     }
 
-    // Stock check
     if (!checkStock()) {
       return;
     }
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let cart = [];
+
+    try {
+      cart =
+        JSON.parse(
+          localStorage.getItem("cart")
+        ) || [];
+    } catch {
+      cart = [];
+    }
 
     const existingItem = cart.find(
       (item) =>
-        Number(item.id) === Number(product.id) && item.size === selectedSize,
+        Number(item.id) === Number(product.id) &&
+        item.size === selectedSize
     );
 
     if (existingItem) {
-      existingItem.quantity += 1;
+      existingItem.quantity =
+        Number(existingItem.quantity || 0) + 1;
     } else {
       cart.push({
         cartItemId: `${product.id}-${selectedSize}-${Date.now()}`,
@@ -359,34 +476,52 @@ function ProductDetail() {
 
         name: productName,
 
-        description: product.description,
+        description:
+          product.description || "",
 
-        image: selectedImage,
+        image:
+          selectedImage ||
+          product.image ||
+          "",
 
-        price: product.price,
+        images: productImages,
 
-        oldPrice: oldPrice,
+        price: price,
 
-        offer: product.offer,
+        oldPrice:
+          oldPrice || 0,
 
-        category: product.category,
+        offer:
+          product.offer || "",
 
-        size: selectedSize,
+        category:
+          product.category || "",
+
+        brand:
+          product.brand || "",
+
+        size:
+          selectedSize,
 
         quantity: 1,
       });
     }
 
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem(
+      "cart",
+      JSON.stringify(cart)
+    );
 
-    window.dispatchEvent(new Event("cartChanged"));
+    window.dispatchEvent(
+      new Event("cartChanged")
+    );
 
     navigate("/cart");
   };
 
-  // =========================
+  // =====================================================
   // BUY NOW
-  // =========================
+  // =====================================================
 
   const buyNow = () => {
     const user = getCurrentUser();
@@ -396,62 +531,101 @@ function ProductDetail() {
       return;
     }
 
-    // Size check
     if (!checkSize()) {
       return;
     }
 
-    // Stock check
     if (!checkStock()) {
       return;
     }
 
     const checkoutProduct = {
       id: product.id,
+
       title: productName,
+
       name: productName,
-      description: product.description,
-      image: selectedImage,
-      price: product.price,
-      oldPrice: oldPrice,
-      offer: product.offer,
-      category: product.category,
-      size: selectedSize,
+
+      description:
+        product.description || "",
+
+      image:
+        selectedImage ||
+        product.image ||
+        "",
+
+      images: productImages,
+
+      price: price,
+
+      oldPrice:
+        oldPrice || 0,
+
+      offer:
+        product.offer || "",
+
+      category:
+        product.category || "",
+
+      brand:
+        product.brand || "",
+
+      size:
+        selectedSize,
+
       quantity: 1,
     };
 
-    localStorage.setItem("buyNowProduct", JSON.stringify(checkoutProduct));
+    localStorage.setItem(
+      "buyNowProduct",
+      JSON.stringify(checkoutProduct)
+    );
 
     navigate("/checkout");
   };
 
-  // =========================
-  // DISABLE BUTTON
-  // =========================
+  // =====================================================
+  // OUT OF STOCK
+  // =====================================================
 
-  const outOfStock = Number(product.stock) <= 0;
+  const outOfStock =
+    Number(product.stock || 0) <= 0;
 
-  // =========================
+  // =====================================================
   // JSX
-  // =========================
+  // =====================================================
 
   return (
     <div className="min-h-screen bg-sky-50 p-4 sm:p-6 lg:p-10">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-10">
+
+        <div className="bg-white rounded-3xl p-5 sm:p-7 lg:p-10 shadow-sm">
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-            {/* =========================
+
+            {/* =====================================================
                 LEFT SIDE
-            ========================= */}
+            ===================================================== */}
 
             <div>
+
               {/* MAIN IMAGE */}
 
               <div className="bg-gray-100 rounded-3xl p-4 sm:p-6">
+
                 {selectedImage ? (
                   <img
                     src={getImageURL(selectedImage)}
                     alt={productName}
+                    onError={(e) => {
+                      console.error(
+                        "IMAGE LOAD ERROR:",
+                        getImageURL(selectedImage)
+                      );
+
+                      e.currentTarget.style.display =
+                        "none";
+                    }}
                     className="
                       w-full
                       h-72
@@ -472,9 +646,12 @@ function ProductDetail() {
                       justify-center
                     "
                   >
-                    <p className="text-gray-500">No image available</p>
+                    <p className="text-gray-500">
+                      No image available
+                    </p>
                   </div>
                 )}
+
               </div>
 
               {/* THUMBNAILS */}
@@ -489,13 +666,18 @@ function ProductDetail() {
                     pb-2
                   "
                 >
-                  {productImages.map((image, index) => (
-                    <img
-                      key={index}
-                      src={getImageURL(image)}
-                      alt={`${productName} ${index + 1}`}
-                      onClick={() => setSelectedImage(image)}
-                      className={`
+                  {productImages.map(
+                    (image, index) => (
+                      <img
+                        key={index}
+                        src={getImageURL(image)}
+                        alt={`${productName} ${
+                          index + 1
+                        }`}
+                        onClick={() =>
+                          setSelectedImage(image)
+                        }
+                        className={`
                           flex-shrink-0
                           w-20
                           h-20
@@ -511,23 +693,28 @@ function ProductDetail() {
                               : "border-gray-200"
                           }
                         `}
-                    />
-                  ))}
+                      />
+                    )
+                  )}
                 </div>
               )}
+
             </div>
 
-            {/* =========================
+            {/* =====================================================
                 RIGHT SIDE
-            ========================= */}
+            ===================================================== */}
 
             <div>
+
               {/* CATEGORY */}
 
               {product.category && (
                 <p className="text-gray-500 text-lg">
                   Category:{" "}
-                  <span className="font-semibold">{product.category}</span>
+                  <span className="font-semibold">
+                    {product.category}
+                  </span>
                 </p>
               )}
 
@@ -564,7 +751,10 @@ function ProductDetail() {
 
               {product.brand && (
                 <p className="text-gray-500 pt-3">
-                  Brand: <span className="font-semibold">{product.brand}</span>
+                  Brand:{" "}
+                  <span className="font-semibold">
+                    {product.brand}
+                  </span>
                 </p>
               )}
 
@@ -601,7 +791,7 @@ function ProductDetail() {
                     text-gray-900
                   "
                 >
-                  ₹{product.price}
+                  ₹{price}
                 </span>
 
                 {oldPrice && (
@@ -640,6 +830,7 @@ function ProductDetail() {
 
               {productSizes.length > 0 && (
                 <div className="pt-8">
+
                   <h3
                     className="
                       text-xl
@@ -658,16 +849,23 @@ function ProductDetail() {
                       pt-2
                     "
                   >
-                    {productSizes.map((size, index) => {
-                      const sizeValue =
-                        typeof size === "object" ? size.size : size;
+                    {productSizes.map(
+                      (size, index) => {
+                        const sizeValue =
+                          typeof size === "object"
+                            ? size.size
+                            : size;
 
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setSelectedSize(sizeValue)}
-                          className={`
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() =>
+                              setSelectedSize(
+                                sizeValue
+                              )
+                            }
+                            className={`
                               w-14
                               h-14
                               rounded-xl
@@ -675,16 +873,18 @@ function ProductDetail() {
                               font-semibold
                               cursor-pointer
                               ${
-                                selectedSize === sizeValue
+                                selectedSize ===
+                                sizeValue
                                   ? "bg-sky-600 text-white border-sky-600"
                                   : "bg-white text-gray-700 border-gray-300 hover:border-sky-500"
                               }
                             `}
-                        >
-                          {sizeValue}
-                        </button>
-                      );
-                    })}
+                          >
+                            {sizeValue}
+                          </button>
+                        );
+                      }
+                    )}
                   </div>
 
                   {selectedSize && (
@@ -695,19 +895,24 @@ function ProductDetail() {
                       </span>
                     </p>
                   )}
+
                 </div>
               )}
 
               {/* STOCK */}
 
               <div className="pt-7">
-                {Number(product.stock) > 0 ? (
+
+                {Number(product.stock || 0) > 0 ? (
                   <p className="text-green-600 font-semibold">
                     ✓ In Stock ({product.stock})
                   </p>
                 ) : (
-                  <p className="text-red-600 font-semibold">✕ Out of Stock</p>
+                  <p className="text-red-600 font-semibold">
+                    ✕ Out of Stock
+                  </p>
                 )}
+
               </div>
 
               {/* DELIVERY */}
@@ -720,9 +925,13 @@ function ProductDetail() {
                   p-5
                 "
               >
-                <h3 className="font-bold text-lg">Delivery Details</h3>
+                <h3 className="font-bold text-lg">
+                  Delivery Details
+                </h3>
 
-                <p className="text-gray-600 mt-2">Free Delivery Available</p>
+                <p className="text-gray-600 mt-2">
+                  Free Delivery Available
+                </p>
 
                 <p className="text-gray-600 mt-1">
                   Estimated Delivery: 3-5 Days
@@ -740,6 +949,7 @@ function ProductDetail() {
                   pt-8
                 "
               >
+
                 {/* WISHLIST */}
 
                 <button
@@ -801,10 +1011,15 @@ function ProductDetail() {
                 >
                   Buy Now
                 </button>
+
               </div>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
     </div>
   );

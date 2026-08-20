@@ -42,11 +42,7 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/product/:id" element={<ProductDetail />} />
-        <Route
-  path="/reset-password/:token"
-  element={<ResetPassword />}
-/>
-         
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
 
       {/* Footer  */}
