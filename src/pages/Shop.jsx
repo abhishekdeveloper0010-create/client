@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-
 import ProductSection from "./ProductSection";
 import api from "../config/api";
 
@@ -11,16 +10,15 @@ function Shop() {
 
   const [searchParams] = useSearchParams();
 
+  const searchTerm = searchParams.get("search") || "";
+
   // =====================================================
   // PRODUCTS
   // =====================================================
 
   const [products, setProducts] = useState([]);
-
   const [totalProducts, setTotalProducts] = useState(0);
-
   const [totalPages, setTotalPages] = useState(1);
-
   const [currentPage, setCurrentPage] = useState(1);
 
   // =====================================================
@@ -54,57 +52,169 @@ function Shop() {
   const productsPerPage = 8;
 
   // =====================================================
-  // SEARCH TERM
-  // =====================================================
-
-  const searchTerm = searchParams.get("search") || "";
-
-  // =====================================================
   // CATEGORY IMAGE URL
   // =====================================================
 
   const categoryImageUrl =
-    import.meta.env.VITE_SERVER_CATEGORY_IMAGE_URL;
+    import.meta.env.VITE_SERVER_CATEGORY_IMAGE_URL ||
+    "http://localhost:4000/category-images";
+
+  // =====================================================
+  // GET CATEGORIES
+  // =====================================================
+
+  useEffect(() => {
+    let mounted = true;
+
+    const getCategories = async () => {
+      try {
+        const response = await api.get("/categories");
+
+        console.log("Categories API Response:", response.data);
+
+        let categoryData = [];
+
+        // ---------------------------------------------
+        // RESPONSE FORMAT 1
+        // ---------------------------------------------
+
+        if (Array.isArray(response.data?.data)) {
+          categoryData = response.data.data;
+        }
+
+        // ---------------------------------------------
+        // RESPONSE FORMAT 2
+        // ---------------------------------------------
+
+        else if (Array.isArray(response.data)) {
+          categoryData = response.data;
+        }
+
+        // ---------------------------------------------
+        // REMOVE DUPLICATES
+        // ---------------------------------------------
+
+        const uniqueCategories = [];
+        const categoryIds = new Set();
+        const categoryNames = new Set();
+
+        categoryData.forEach((category) => {
+          if (!category) return;
+
+          const id = Number(category.id);
+
+          const name = String(category.name || "").trim();
+
+          if (!id || !name) {
+            return;
+          }
+
+          // Ignore "All" from database
+          if (name.toLowerCase() === "all") {
+            return;
+          }
+
+          const nameKey = name.toLowerCase();
+
+          // Remove duplicate ID
+          if (categoryIds.has(id)) {
+            return;
+          }
+
+          // Remove duplicate name
+          if (categoryNames.has(nameKey)) {
+            return;
+          }
+
+          categoryIds.add(id);
+          categoryNames.add(nameKey);
+
+          uniqueCategories.push({
+            ...category,
+            id,
+            name,
+          });
+        });
+
+        if (mounted) {
+          setCategories(uniqueCategories);
+        }
+      } catch (err) {
+        console.error("Category API Error:", err);
+
+        if (mounted) {
+          setCategories([]);
+        }
+      }
+    };
+
+    getCategories();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // =====================================================
+  // FIND SELECTED CATEGORY ID
+  // =====================================================
+
+  const selectedCategoryId = useMemo(() => {
+    if (
+      !selectedCategory ||
+      selectedCategory.toLowerCase() === "all"
+    ) {
+      return null;
+    }
+
+    const selected = categories.find(
+      (category) =>
+        String(category.name).trim().toLowerCase() ===
+        String(selectedCategory).trim().toLowerCase()
+    );
+
+    return selected ? Number(selected.id) : null;
+  }, [categories, selectedCategory]);
 
   // =====================================================
   // GET PRODUCTS
   // =====================================================
 
   useEffect(() => {
-    document.title = "Shop - Apple Blossom";
+    let mounted = true;
 
     const getProducts = async () => {
       try {
         setLoading(true);
         setError("");
 
-        // =================================================
-        // BACKEND CATEGORY
-        // =================================================
+        // ---------------------------------------------
+        // API PARAMS
+        // ---------------------------------------------
 
-        const backendCategory =
-          selectedCategory === "All"
-            ? ""
-            : selectedCategory;
-
-        console.log("Getting products:", {
+        const params = {
           page: currentPage,
           limit: productsPerPage,
-          search: searchTerm,
-          category: backendCategory,
-        });
+          search: searchTerm.trim(),
+        };
 
-        // =================================================
+        // ---------------------------------------------
+        // IMPORTANT:
+        // ONLY SEND category_id WHEN CATEGORY IS SELECTED
+        // ---------------------------------------------
+
+        if (selectedCategoryId !== null) {
+          params.category_id = selectedCategoryId;
+        }
+
+        console.log("Getting products:", params);
+
+        // ---------------------------------------------
         // API REQUEST
-        // =================================================
+        // ---------------------------------------------
 
         const response = await api.get("/products", {
-          params: {
-            page: currentPage,
-            limit: productsPerPage,
-            search: searchTerm,
-            category: backendCategory,
-          },
+          params,
         });
 
         console.log(
@@ -112,43 +222,82 @@ function Shop() {
           response.data
         );
 
+        if (!mounted) {
+          return;
+        }
+
         const data = response.data;
 
         // =================================================
         // PRODUCTS
         // =================================================
 
-        if (Array.isArray(data.data)) {
-          setProducts(data.data);
+        let productList = [];
+
+        if (Array.isArray(data?.data)) {
+          productList = data.data;
+        } else if (Array.isArray(data?.products)) {
+          productList = data.products;
         } else if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          setProducts([]);
+          productList = data;
         }
+
+        setProducts(productList);
 
         // =================================================
         // TOTAL PRODUCTS
         // =================================================
 
-        setTotalProducts(
-          Number(data.total || 0)
+        const total = Number(
+          data?.total ??
+            data?.totalProducts ??
+            data?.count ??
+            0
         );
+
+        setTotalProducts(total);
 
         // =================================================
         // TOTAL PAGES
         // =================================================
 
-        setTotalPages(
-          Math.max(
-            1,
-            Number(data.totalPages || 1)
-          )
+        let pages = Number(
+          data?.totalPages ??
+            data?.pages ??
+            0
         );
+
+        // ---------------------------------------------
+        // If backend does not send totalPages,
+        // calculate it from total
+        // ---------------------------------------------
+
+        if (!pages && total > 0) {
+          pages = Math.ceil(total / productsPerPage);
+        }
+
+        if (!pages) {
+          pages = 1;
+        }
+
+        setTotalPages(pages);
+
+        // =================================================
+        // CURRENT PAGE SAFETY
+        // =================================================
+
+        if (currentPage > pages) {
+          setCurrentPage(pages);
+        }
       } catch (err) {
         console.error(
           "Product API Error:",
           err
         );
+
+        if (!mounted) {
+          return;
+        }
 
         setProducts([]);
         setTotalProducts(0);
@@ -158,139 +307,38 @@ function Shop() {
           "Products load nahi ho pa rahe hain."
         );
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     getProducts();
+
+    return () => {
+      mounted = false;
+    };
   }, [
     currentPage,
-    selectedCategory,
     searchTerm,
+    selectedCategoryId,
   ]);
-
-  // =====================================================
-  // GET CATEGORIES FROM DATABASE
-  // =====================================================
-
-  useEffect(() => {
-    const getCategories = async () => {
-      try {
-        const response = await api.get(
-          "/categories"
-        );
-
-        console.log(
-          "Categories API Response:",
-          response.data
-        );
-
-        let categoryData = [];
-
-        // ===============================================
-        // RESPONSE FORMAT
-        // ===============================================
-
-        if (
-          Array.isArray(response.data?.data)
-        ) {
-          categoryData =
-            response.data.data;
-        } else if (
-          Array.isArray(response.data)
-        ) {
-          categoryData =
-            response.data;
-        }
-
-        // ===============================================
-        // REMOVE DUPLICATE CATEGORIES
-        // ALSO REMOVE "ALL"
-        // ===============================================
-
-        const uniqueCategories = [];
-
-        const categoryNames = new Set();
-
-        categoryData.forEach((category) => {
-          const name = String(
-            category?.name || ""
-          ).trim();
-
-          if (!name) {
-            return;
-          }
-
-          // ---------------------------------------------
-          // ALL ko database se ignore karo
-          // ---------------------------------------------
-
-          if (
-            name.toLowerCase() === "all"
-          ) {
-            return;
-          }
-
-          const key =
-            name.toLowerCase();
-
-          // ---------------------------------------------
-          // DUPLICATE REMOVE
-          // ---------------------------------------------
-
-          if (
-            categoryNames.has(key)
-          ) {
-            return;
-          }
-
-          categoryNames.add(key);
-
-          uniqueCategories.push({
-            ...category,
-            name,
-          });
-        });
-
-        setCategories(
-          uniqueCategories
-        );
-      } catch (err) {
-        console.error(
-          "Category API Error:",
-          err
-        );
-
-        setCategories([]);
-      }
-    };
-
-    getCategories();
-  }, []);
 
   // =====================================================
   // CATEGORY CHANGE
   // =====================================================
 
-  const handleCategoryChange = (
-    category
-  ) => {
-    const newCategory =
-      category || "All";
+  const handleCategoryChange = (category) => {
+    const newCategory = category || "All";
 
     console.log(
       "Category changed:",
       newCategory
     );
 
-    setSelectedCategory(
-      newCategory
-    );
+    setSelectedCategory(newCategory);
 
-    // ===============================================
-    // CATEGORY CHANGE => PAGE 1
-    // ===============================================
-
+    // Category change => page 1
     setCurrentPage(1);
 
     window.scrollTo({
@@ -303,22 +351,22 @@ function Shop() {
   // PAGE CHANGE
   // =====================================================
 
-  const handlePageChange = (
-    page
-  ) => {
-    const nextPage =
-      Number(page);
+  const handlePageChange = (page) => {
+    const nextPage = Number(page);
 
-    if (
-      !Number.isInteger(nextPage)
-    ) {
+    if (!Number.isInteger(nextPage)) {
       return;
     }
 
-    if (
-      nextPage < 1 ||
-      nextPage > totalPages
-    ) {
+    if (nextPage < 1) {
+      return;
+    }
+
+    if (nextPage > totalPages) {
+      return;
+    }
+
+    if (nextPage === currentPage) {
       return;
     }
 
@@ -327,9 +375,7 @@ function Shop() {
       nextPage
     );
 
-    setCurrentPage(
-      nextPage
-    );
+    setCurrentPage(nextPage);
 
     window.scrollTo({
       top: 0,
@@ -338,46 +384,39 @@ function Shop() {
   };
 
   // =====================================================
-  // CATEGORY FILTER BUTTONS
-  // =====================================================
-  //
-  // IMPORTANT:
-  // "All" manually add ho raha hai.
-  // Database se agar "All" aaye bhi,
-  // humne upar remove kar diya hai.
-  //
-  // Isliye All sirf 1 baar show hoga.
+  // CATEGORY FILTERS
   // =====================================================
 
   const categoryFilters = [
     "All",
-    ...categories
-      .map(
-        (category) =>
-          category.name
-      )
-      .filter(
-        (name) =>
-          name &&
-          name
-            .trim()
-            .toLowerCase() !==
-            "all"
-      ),
+    ...categories.map(
+      (category) => category.name
+    ),
   ];
 
   // =====================================================
-  // REMOVE DUPLICATES FROM FILTER BUTTONS
+  // REMOVE DUPLICATES
   // =====================================================
 
   const uniqueCategoryFilters = [
-    ...new Set(
-      categoryFilters.map(
-        (category) =>
-          category.trim()
-      )
-    ),
+    ...new Map(
+      categoryFilters.map((category) => [
+        category.toLowerCase(),
+        category,
+      ])
+    ).values(),
   ];
+
+  // =====================================================
+  // RETRY
+  // =====================================================
+
+  const handleRetry = () => {
+    setError("");
+
+    // Force API reload by going page 1
+    setCurrentPage(1);
+  };
 
   // =====================================================
   // RETURN
@@ -414,105 +453,109 @@ function Shop() {
               2xl:gap-12
             "
           >
-            {categories.map(
-              (item) => {
-                const imageUrl =
-                  item.image
-                    ? `${categoryImageUrl}/${item.image}`
-                    : "";
+            {categories.map((item) => {
+              const imageUrl = item.image
+                ? `${categoryImageUrl}/${item.image}`
+                : "";
 
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() =>
-                      handleCategoryChange(
-                        item.name
-                      )
+              const isSelected =
+                selectedCategory.toLowerCase() ===
+                String(item.name)
+                  .trim()
+                  .toLowerCase();
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() =>
+                    handleCategoryChange(item.name)
+                  }
+                  className={`
+                    flex w-full flex-col items-center
+                    rounded-3xl border p-4
+                    text-center transition duration-300
+
+                    ${
+                      isSelected
+                        ? "border-sky-500 bg-sky-100 shadow-lg"
+                        : "border-transparent bg-white hover:border-sky-200 hover:shadow-md"
                     }
-                    className={`
-                      flex w-full flex-col items-center
-                      rounded-3xl border p-4
-                      text-center transition duration-300
+                  `}
+                >
+                  {/* IMAGE */}
 
-                      ${
-                        selectedCategory ===
-                        item.name
-                          ? "border-sky-500 bg-sky-100 shadow-lg"
-                          : "border-transparent bg-white hover:border-sky-200 hover:shadow-md"
-                      }
-                    `}
+                  <div
+                    className="
+                      flex w-full items-center justify-center
+                      overflow-hidden bg-[#006b91] shadow-md
+                      h-[140px]
+                      rounded-[45px_15px_45px_15px]
+
+                      sm:h-[155px]
+                      md:h-[170px]
+                      lg:h-[175px]
+                      lg:rounded-[55px_20px_55px_20px]
+                      xl:h-[190px]
+                      2xl:h-[220px]
+                    "
                   >
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={item.name}
+                        className="
+                          h-auto w-auto max-w-[80%]
+                          object-contain
+                          max-h-[110px]
+                          sm:max-h-[120px]
+                          md:max-h-[135px]
+                          lg:max-h-[140px]
+                          xl:max-h-[150px]
+                          2xl:max-h-[175px]
+                        "
+                        onError={(event) => {
+                          event.currentTarget.style.display =
+                            "none";
+                        }}
+                      />
+                    ) : (
+                      <span className="text-4xl text-white">
+                        🛍️
+                      </span>
+                    )}
+                  </div>
 
-                    {/* ===================================
-                        IMAGE
-                    =================================== */}
+                  {/* CATEGORY NAME */}
 
-                    <div
-                      className="
-                        flex w-full items-center justify-center
-                        overflow-hidden bg-[#006b91] shadow-md
+                  <h2
+                    className="
+                      pt-3 font-bold text-[#0c4a6e]
+                      text-xl
+                      sm:text-2xl
+                      md:text-[26px]
+                      lg:text-[26px]
+                      xl:text-[28px]
+                      2xl:text-[30px]
+                    "
+                    style={{
+                      fontFamily:
+                        "Georgia, serif",
+                    }}
+                  >
+                    {item.name}
+                  </h2>
 
-                        h-[140px]
-                        rounded-[45px_15px_45px_15px]
+                  {/* CATEGORY ID - OPTIONAL DEBUG */}
 
-                        sm:h-[155px]
-                        md:h-[170px]
-                        lg:h-[175px]
-                        lg:rounded-[55px_20px_55px_20px]
-                        xl:h-[190px]
-                        2xl:h-[220px]
-                      "
-                    >
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={item.name}
-                          className="
-                            h-auto w-auto max-w-[80%]
-                            object-contain
-
-                            max-h-[110px]
-                            sm:max-h-[120px]
-                            md:max-h-[135px]
-                            lg:max-h-[140px]
-                            xl:max-h-[150px]
-                            2xl:max-h-[175px]
-                          "
-                        />
-                      ) : (
-                        <span className="text-4xl text-white">
-                          🛍️
-                        </span>
-                      )}
-                    </div>
-
-                    {/* ===================================
-                        CATEGORY NAME
-                    =================================== */}
-
-                    <h2
-                      className="
-                        pt-3 font-bold text-[#0c4a6e]
-                        text-xl
-                        sm:text-2xl
-                        md:text-[26px]
-                        lg:text-[26px]
-                        xl:text-[28px]
-                        2xl:text-[30px]
-                      "
-                      style={{
-                        fontFamily:
-                          "Georgia, serif",
-                      }}
-                    >
-                      {item.name}
-                    </h2>
-
-                  </button>
-                );
-              }
-            )}
+                  {/* 
+                  <span className="text-xs text-slate-500">
+                    ID: {item.id}
+                  </span>
+                  */}
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -531,38 +574,44 @@ function Shop() {
           "
         >
           {uniqueCategoryFilters.map(
-            (category) => (
-              <button
-                key={category}
-                type="button"
-                onClick={() =>
-                  handleCategoryChange(
-                    category
-                  )
-                }
-                className={`
-                  rounded-full
-                  px-5
-                  py-3
-                  text-sm
-                  font-semibold
-                  transition
-                  duration-300
+            (category) => {
+              const isSelected =
+                selectedCategory.toLowerCase() ===
+                String(category)
+                  .trim()
+                  .toLowerCase();
 
-                  ${
-                    selectedCategory ===
-                    category
-                      ? "bg-sky-700 text-white shadow-md"
-                      : "bg-sky-100 text-slate-700 hover:bg-sky-200"
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() =>
+                    handleCategoryChange(
+                      category
+                    )
                   }
-                `}
-              >
-                {category}
-              </button>
-            )
+                  className={`
+                    rounded-full
+                    px-5
+                    py-3
+                    text-sm
+                    font-semibold
+                    transition
+                    duration-300
+
+                    ${
+                      isSelected
+                        ? "bg-sky-700 text-white shadow-md"
+                        : "bg-sky-100 text-slate-700 hover:bg-sky-200"
+                    }
+                  `}
+                >
+                  {category}
+                </button>
+              );
+            }
           )}
         </div>
-
       </div>
 
       {/* =================================================
@@ -584,16 +633,7 @@ function Shop() {
 
             <button
               type="button"
-              onClick={() => {
-                // Force API reload
-                setCurrentPage(
-                  (prev) => prev
-                );
-
-                // Better retry by changing
-                // loading state through a reload
-                window.location.reload();
-              }}
+              onClick={handleRetry}
               className="
                 mt-5
                 rounded-lg
@@ -612,33 +652,20 @@ function Shop() {
         ) : (
           <ProductSection
             products={products}
-            selectedCategory={
-              selectedCategory
-            }
+            selectedCategory={selectedCategory}
             onCategoryChange={
               handleCategoryChange
             }
-            searchTerm={
-              searchTerm
-            }
+            searchTerm={searchTerm}
             loading={loading}
-            currentPage={
-              currentPage
-            }
-            totalPages={
-              totalPages
-            }
-            totalProducts={
-              totalProducts
-            }
-            onPageChange={
-              handlePageChange
-            }
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalProducts={totalProducts}
+            onPageChange={handlePageChange}
           />
         )}
 
       </div>
-
     </section>
   );
 }

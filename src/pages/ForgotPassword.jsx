@@ -5,52 +5,83 @@ import axios from "axios";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+
   const [error, setError] = useState("");
+
   const [success, setSuccess] = useState("");
+
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
-  // Email change
+  // =====================================================
+  // EMAIL CHANGE
+  // =====================================================
+
   const handleChange = (event) => {
     setEmail(event.target.value);
 
-    // Typing karte hi error remove
     setError("");
   };
 
-  // Form submit
- const handleSubmit = async (event) => {
-  event.preventDefault();
+  // =====================================================
+  // FORM SUBMIT
+  // =====================================================
 
-  if (!email.trim()) {
-    setError("Please enter your email address.");
-    setSuccess("");
-    return;
-  }
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  try {
-    const response = await axios.post(
-`${import.meta.env.VITE_SERVER_API_URL}/auth/forgot-password`,
-      { email }
-    );
+    if (!email.trim()) {
+      setError(
+        "Please enter your email address."
+      );
 
-    setError("");
-    setSuccess(
-      response.data.message ||
-        `Password reset instructions have been sent to ${email}.`
-    );
-  } catch (error) {
-    setSuccess("");
-    setError(
-      error.response?.data?.message ||
-        "Something went wrong. Please try again."
-    );
-  }
-};
+      setSuccess("");
+
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const API_URL =
+        import.meta.env.VITE_SERVER_API_URL ||
+        "http://localhost:4000/api";
+
+      const response = await axios.post(
+        `${API_URL}/auth/forgot-password`,
+        {
+          email: email.trim().toLowerCase(),
+        }
+      );
+
+      setError("");
+
+      setSuccess(
+        response.data.message ||
+          `Password reset instructions have been sent to ${email}.`
+      );
+
+    } catch (error) {
+      setSuccess("");
+
+      setError(
+        error.response?.data?.message ||
+          "Something went wrong. Please try again."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* MAIN BOX */}
+
       <div
         className="
           relative w-full max-w-[1200px] min-h-[650px]
@@ -59,29 +90,37 @@ function ForgotPassword() {
           shadow-[0_0_25px_rgba(34,211,238,0.35)]
         "
       >
+
         {/* DARK BACKGROUND */}
+
         <div className="absolute inset-0 bg-[#0d1f29]" />
 
-        {/* LEFT GRADIENT BACKGROUND */}
+        {/* LEFT GRADIENT */}
+
         <div
           className="
             absolute inset-y-0 left-0 w-[62%]
             bg-gradient-to-r
-            from-[#147584] via-[#1c8794] to-[#20b8c6]
+            from-[#147584]
+            via-[#1c8794]
+            to-[#20b8c6]
             [clip-path:polygon(0_0,65%_0,30%_100%,0_100%)]
           "
         />
 
-        {/* MAIN CONTENT */}
         <div className="relative z-10 flex min-h-[650px]">
-          {/* LEFT WELCOME SECTION */}
+
+          {/* LEFT */}
+
           <div
             className="
               hidden lg:flex w-[48%]
               items-center px-12 py-14
             "
           >
+
             <div className="max-w-[360px]">
+
               <h2 className="text-5xl font-bold tracking-wide text-white">
                 DON'T WORRY!
               </h2>
@@ -93,10 +132,13 @@ function ForgotPassword() {
                 <br />
                 your password.
               </p>
+
             </div>
+
           </div>
 
-          {/* RIGHT FORM SECTION */}
+          {/* RIGHT */}
+
           <div
             className="
               w-full lg:w-[52%]
@@ -106,8 +148,11 @@ function ForgotPassword() {
               lg:px-20 lg:py-14
             "
           >
+
             <div className="w-full max-w-[420px]">
-              {/* Back Button */}
+
+              {/* BACK */}
+
               <button
                 type="button"
                 onClick={() => navigate(-1)}
@@ -122,27 +167,31 @@ function ForgotPassword() {
                 Back
               </button>
 
-              {/* Heading */}
+              {/* HEADING */}
+
               <h1 className="pb-3 text-center text-4xl font-bold text-white sm:text-5xl">
                 Forgot Password?
               </h1>
 
-              {/* Description */}
               <p className="pb-8 text-center text-slate-300">
-                Enter your email and we'll send you instructions to reset your
-                password.
+                Enter your email and we'll send you
+                instructions to reset your password.
               </p>
 
               <form onSubmit={handleSubmit}>
-                {/* Success Message */}
+
+                {/* SUCCESS */}
+
                 {success && (
                   <div className="mb-5 border border-green-400 bg-green-500/10 px-4 py-3 text-sm text-green-400">
                     {success}
                   </div>
                 )}
 
-                {/* EMAIL FIELD */}
+                {/* EMAIL */}
+
                 <div className="pb-8">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Email Address
                   </label>
@@ -159,11 +208,15 @@ function ForgotPassword() {
                       }
                     `}
                   >
-                    {/* Email Icon */}
+
                     <FaEnvelope
                       className={`
                         shrink-0 text-lg
-                        ${error ? "text-red-400" : "text-cyan-400"}
+                        ${
+                          error
+                            ? "text-red-400"
+                            : "text-cyan-400"
+                        }
                       `}
                     />
 
@@ -179,34 +232,48 @@ function ForgotPassword() {
                         placeholder:text-slate-500
                       "
                     />
+
                   </div>
-                  {/* Error Message */}
+
                   {error && (
-                    <div className="pt-2 text-sm text-red-400">{error}</div>
+                    <div className="pt-2 text-sm text-red-400">
+                      {error}
+                    </div>
                   )}
+
                 </div>
 
-                {/* SEND BUTTON */}
+                {/* SEND */}
+
                 <button
                   type="submit"
+                  disabled={loading}
                   className="
                     w-full rounded-full
                     border-2 border-cyan-300
                     bg-gradient-to-b
-                    from-[#38d4e5] to-[#08717e]
+                    from-[#38d4e5]
+                    to-[#08717e]
                     py-3 text-xl font-bold text-white
                     shadow-[0_4px_12px_rgba(34,211,238,0.35)]
                     transition duration-300
                     hover:scale-[1.02]
                     hover:shadow-[0_5px_20px_rgba(34,211,238,0.55)]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
                   "
                 >
-                  Send Reset Link
+                  {loading
+                    ? "Sending..."
+                    : "Send Reset Link"}
                 </button>
 
-                {/* Back To Login */}
+                {/* LOGIN */}
+
                 <p className="pt-6 text-center text-base text-slate-300">
+
                   Remember your password?{" "}
+
                   <Link
                     to="/login"
                     className="
@@ -217,12 +284,19 @@ function ForgotPassword() {
                   >
                     Login
                   </Link>
+
                 </p>
+
               </form>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
   );
 }

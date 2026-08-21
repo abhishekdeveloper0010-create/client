@@ -11,12 +11,10 @@ function OrderTracking() {
   // =====================================================
 
   const API_URL =
-    import.meta.env.VITE_SERVER_API_URL ||
-    "http://localhost:4000/api";
+    import.meta.env.VITE_SERVER_API_URL || "http://localhost:4000/api";
 
   const IMAGE_URL =
-    import.meta.env.VITE_SERVER_IMAGES_URL ||
-    "http://localhost:4000/uploads";
+    import.meta.env.VITE_SERVER_IMAGES_URL || "http://localhost:4000/uploads";
 
   // =====================================================
   // STATES
@@ -63,10 +61,7 @@ function OrderTracking() {
   const getImageURL = (image) => {
     if (!image) return "";
 
-    if (
-      image.startsWith("http://") ||
-      image.startsWith("https://")
-    ) {
+    if (image.startsWith("http://") || image.startsWith("https://")) {
       return image;
     }
 
@@ -90,28 +85,22 @@ function OrderTracking() {
         return;
       }
 
-      const response = await fetch(
-        `${API_URL}/orders/my-orders`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/orders/my-orders`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      const contentType =
-        response.headers.get("content-type") || "";
+      const contentType = response.headers.get("content-type") || "";
 
       if (!contentType.includes("application/json")) {
         const text = await response.text();
 
         console.error("NON JSON RESPONSE:", text);
 
-        throw new Error(
-          "Server returned an invalid response."
-        );
+        throw new Error("Server returned an invalid response.");
       }
 
       const data = await response.json();
@@ -119,20 +108,14 @@ function OrderTracking() {
       console.log("ORDERS API RESPONSE:", data);
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to load orders"
-        );
+        throw new Error(data.message || "Failed to load orders");
       }
 
       if (!data.success) {
-        throw new Error(
-          data.message || "Failed to load orders"
-        );
+        throw new Error(data.message || "Failed to load orders");
       }
 
-      const serverOrders = Array.isArray(data.orders)
-        ? data.orders
-        : [];
+      const serverOrders = Array.isArray(data.orders) ? data.orders : [];
 
       setOrders(serverOrders);
 
@@ -146,9 +129,7 @@ function OrderTracking() {
     } catch (err) {
       console.error("LOAD ORDERS ERROR:", err);
 
-      setError(
-        err.message || "Unable to load orders"
-      );
+      setError(err.message || "Unable to load orders");
 
       setOrders([]);
     } finally {
@@ -172,24 +153,18 @@ function OrderTracking() {
         return;
       }
 
-      const response = await fetch(
-        `${API_URL}/orders/${orderId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_URL}/orders/${orderId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-      const contentType =
-        response.headers.get("content-type") || "";
+      const contentType = response.headers.get("content-type") || "";
 
       if (!contentType.includes("application/json")) {
-        throw new Error(
-          "Server returned an invalid response."
-        );
+        throw new Error("Server returned an invalid response.");
       }
 
       const data = await response.json();
@@ -197,28 +172,19 @@ function OrderTracking() {
       console.log("SINGLE ORDER RESPONSE:", data);
 
       if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to load order"
-        );
+        throw new Error(data.message || "Failed to load order");
       }
 
       if (!data.success) {
-        throw new Error(
-          data.message || "Failed to load order"
-        );
+        throw new Error(data.message || "Failed to load order");
       }
 
       setSelectedOrder(data.order);
       setSelectedOrderId(orderId);
     } catch (err) {
-      console.error(
-        "LOAD SINGLE ORDER ERROR:",
-        err
-      );
+      console.error("LOAD SINGLE ORDER ERROR:", err);
 
-      setError(
-        err.message || "Failed to load order"
-      );
+      setError(err.message || "Failed to load order");
     } finally {
       setLoadingOrder(false);
     }
@@ -263,24 +229,18 @@ function OrderTracking() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            reason:
-              actionReason.trim() ||
-              "Changed my mind",
+            reason: actionReason.trim() || "Changed my mind",
           }),
-        }
+        },
       );
 
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(
-          data.message || "Failed to cancel order"
-        );
+        throw new Error(data.message || "Failed to cancel order");
       }
 
-      setSuccess(
-        "Order cancelled successfully."
-      );
+      setSuccess("Order cancelled successfully.");
 
       setActionType(null);
       setActionReason("");
@@ -289,14 +249,9 @@ function OrderTracking() {
 
       await loadSingleOrder(selectedOrder.id);
     } catch (err) {
-      console.error(
-        "CANCEL ORDER ERROR:",
-        err
-      );
+      console.error("CANCEL ORDER ERROR:", err);
 
-      setError(
-        err.message || "Failed to cancel order"
-      );
+      setError(err.message || "Failed to cancel order");
     } finally {
       setActionLoading(false);
     }
@@ -337,7 +292,7 @@ function OrderTracking() {
           body: JSON.stringify({
             reason: actionReason.trim(),
           }),
-        }
+        },
       );
 
       const data = await response.json();
@@ -345,15 +300,10 @@ function OrderTracking() {
       console.log("RETURN RESPONSE:", data);
 
       if (!response.ok || !data.success) {
-        throw new Error(
-          data.message ||
-            "Failed to request return"
-        );
+        throw new Error(data.message || "Failed to request return");
       }
 
-      setSuccess(
-        "Return request submitted successfully."
-      );
+      setSuccess("Return request submitted successfully.");
 
       setActionType(null);
       setActionReason("");
@@ -362,15 +312,9 @@ function OrderTracking() {
       await loadOrders();
       await loadSingleOrder(selectedOrder.id);
     } catch (err) {
-      console.error(
-        "RETURN ITEM ERROR:",
-        err
-      );
+      console.error("RETURN ITEM ERROR:", err);
 
-      setError(
-        err.message ||
-          "Failed to request return"
-      );
+      setError(err.message || "Failed to request return");
     } finally {
       setActionLoading(false);
     }
@@ -381,11 +325,7 @@ function OrderTracking() {
   // =====================================================
 
   const canCancelOrder = (status) => {
-    return [
-      "Order Placed",
-      "Confirmed",
-      "Packed",
-    ].includes(status);
+    return ["Order Placed", "Confirmed", "Packed"].includes(status);
   };
 
   // =====================================================
@@ -462,9 +402,7 @@ function OrderTracking() {
               Loading your orders...
             </h2>
 
-            <p className="mt-2 text-sm text-slate-500">
-              Please wait a moment
-            </p>
+            <p className="mt-2 text-sm text-slate-500">Please wait a moment</p>
           </div>
         </div>
       </div>
@@ -488,15 +426,15 @@ function OrderTracking() {
               <div className="mb-2 inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-200">
                 Orders & Tracking
               </div>
+             
 
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl pt-4 pb-2">
                 Order Tracking
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                Track your orders, check delivery status,
-                manage returns and view complete order
-                details.
+                Track your orders, check delivery status, manage returns and
+                view complete order details.
               </p>
             </div>
 
@@ -508,16 +446,15 @@ function OrderTracking() {
             </Link>
           </div>
         </div>
-
+        <br />
+        <br />
         {/* =====================================================
             ALERTS
         ===================================================== */}
 
         {error && (
           <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-sm">
-            <p className="text-sm font-medium">
-              {error}
-            </p>
+            <p className="text-sm font-medium">{error}</p>
 
             <button
               type="button"
@@ -551,9 +488,8 @@ function OrderTracking() {
               </h2>
 
               <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-500 sm:text-base">
-                You haven't placed any orders yet.
-                Complete your first purchase to start
-                tracking your orders here.
+                You haven't placed any orders yet. Complete your first purchase
+                to start tracking your orders here.
               </p>
 
               <Link
@@ -593,27 +529,23 @@ function OrderTracking() {
                     </span>
                   </div>
                 </div>
-
+                <br />
                 <div className="max-h-[calc(100vh-230px)] space-y-3 overflow-y-auto p-4 sm:p-5">
                   {orders.map((order) => {
-                    const active =
-                      Number(selectedOrderId) ===
-                      Number(order.id);
+                    const active = Number(selectedOrderId) === Number(order.id);
 
                     return (
                       <button
                         key={order.id}
                         type="button"
-                        onClick={() =>
-                          handleSelectOrder(order)
-                        }
+                        onClick={() => handleSelectOrder(order)}
                         className={`group w-full rounded-2xl border p-4 text-left transition-all duration-200 ${
                           active
                             ? "border-sky-500 bg-sky-50 shadow-md shadow-sky-100"
                             : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3  ">
                           <div className="min-w-0">
                             <p className="truncate text-base font-black text-slate-800">
                               #
@@ -623,10 +555,7 @@ function OrderTracking() {
                             </p>
 
                             <p className="mt-1 text-xs text-slate-500">
-                              {formatDate(
-                                order.placedAt ||
-                                  order.placed_at
-                              )}
+                              {formatDate(order.placedAt || order.placed_at)}
                             </p>
                           </div>
 
@@ -638,9 +567,7 @@ function OrderTracking() {
                         <div className="mt-4 flex items-center justify-between border-t border-slate-200/70 pt-3">
                           <span className="text-xs font-medium text-slate-500">
                             {order.items?.length || 0}{" "}
-                            {order.items?.length === 1
-                              ? "item"
-                              : "items"}
+                            {order.items?.length === 1 ? "item" : "items"}
                           </span>
 
                           <span className="text-base font-black text-slate-800">
@@ -649,7 +576,7 @@ function OrderTracking() {
                               order.total ||
                                 order.totalAmount ||
                                 order.total_amount ||
-                                0
+                                0,
                             ).toLocaleString("en-IN")}
                           </span>
                         </div>
@@ -698,8 +625,7 @@ function OrderTracking() {
                         <p className="mt-2 text-sm text-slate-500">
                           Placed on{" "}
                           {formatDate(
-                            selectedOrder.placedAt ||
-                              selectedOrder.placed_at
+                            selectedOrder.placedAt || selectedOrder.placed_at,
                           )}
                         </p>
                       </div>
@@ -715,7 +641,7 @@ function OrderTracking() {
                       </div>
                     </div>
                   </section>
-
+                  <br />
                   {/* =====================================================
                       TRACKING
                   ===================================================== */}
@@ -732,97 +658,82 @@ function OrderTracking() {
                     </div>
 
                     <div className="relative">
-                      {orderStatuses.map(
-                        (status, index) => {
-                          const currentIndex =
-                            getStatusIndex(
-                              selectedOrder.status
-                            );
+                      {orderStatuses.map((status, index) => {
+                        const currentIndex = getStatusIndex(
+                          selectedOrder.status,
+                        );
 
-                          const completed =
-                            currentIndex >= index;
+                        const completed = currentIndex >= index;
 
-                          const historyItem =
-                            selectedOrder.history?.find(
-                              (item) =>
-                                item.status === status
-                            );
+                        const historyItem = selectedOrder.history?.find(
+                          (item) => item.status === status,
+                        );
 
-                          const isLast =
-                            index ===
-                            orderStatuses.length - 1;
+                        const isLast = index === orderStatuses.length - 1;
 
-                          return (
+                        return (
+                          <div
+                            key={status}
+                            className="relative flex gap-4 sm:gap-5"
+                          >
+                            {/* LINE */}
+                            {!isLast && (
+                              <div
+                                className={`absolute left-[18px] top-10 h-[calc(100%-5px)] w-0.5 ${
+                                  currentIndex > index
+                                    ? "bg-sky-500"
+                                    : "bg-slate-200"
+                                }`}
+                              />
+                            )}
+
+                            {/* ICON */}
                             <div
-                              key={status}
-                              className="relative flex gap-4 sm:gap-5"
+                              className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black ${
+                                completed
+                                  ? "border-sky-600 bg-sky-600 text-white shadow-md shadow-sky-100"
+                                  : "border-slate-200 bg-white text-slate-400"
+                              }`}
                             >
-                              {/* LINE */}
-                              {!isLast && (
-                                <div
-                                  className={`absolute left-[18px] top-10 h-[calc(100%-5px)] w-0.5 ${
-                                    currentIndex > index
-                                      ? "bg-sky-500"
-                                      : "bg-slate-200"
+                              {completed ? "✓" : index + 1}
+                            </div>
+
+                            {/* CONTENT */}
+                            <div
+                              className={`min-w-0 flex-1 ${
+                                isLast ? "pb-1" : "pb-7"
+                              }`}
+                            >
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <p
+                                  className={`font-bold ${
+                                    completed
+                                      ? "text-slate-800"
+                                      : "text-slate-400"
                                   }`}
-                                />
-                              )}
+                                >
+                                  {status}
+                                </p>
 
-                              {/* ICON */}
-                              <div
-                                className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black ${
-                                  completed
-                                    ? "border-sky-600 bg-sky-600 text-white shadow-md shadow-sky-100"
-                                    : "border-slate-200 bg-white text-slate-400"
-                                }`}
-                              >
-                                {completed
-                                  ? "✓"
-                                  : index + 1}
-                              </div>
-
-                              {/* CONTENT */}
-                              <div
-                                className={`min-w-0 flex-1 ${
-                                  isLast
-                                    ? "pb-1"
-                                    : "pb-7"
-                                }`}
-                              >
-                                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                  <p
-                                    className={`font-bold ${
-                                      completed
-                                        ? "text-slate-800"
-                                        : "text-slate-400"
-                                    }`}
-                                  >
-                                    {status}
-                                  </p>
-
-                                  {historyItem?.created_at && (
-                                    <p className="text-xs text-slate-400">
-                                      {formatDate(
-                                        historyItem.created_at
-                                      )}
-                                    </p>
-                                  )}
-                                </div>
-
-                                {historyItem && (
-                                  <p className="mt-1 text-sm text-slate-500">
-                                    {historyItem.message ||
-                                      "Status updated"}
+                                {historyItem?.created_at && (
+                                  <p className="text-xs text-slate-400">
+                                    {formatDate(historyItem.created_at)}
                                   </p>
                                 )}
                               </div>
+
+                              {historyItem && (
+                                <p className="mt-1 text-sm text-slate-500">
+                                  {historyItem.message || "Status updated"}
+                                </p>
+                              )}
                             </div>
-                          );
-                        }
-                      )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
-
+                  <br />
                   {/* =====================================================
                       PRODUCTS
                   ===================================================== */}
@@ -839,214 +750,176 @@ function OrderTracking() {
                     </div>
 
                     <div className="space-y-4">
-                      {selectedOrder.items?.length >
-                      0 ? (
-                        selectedOrder.items.map(
-                          (item) => {
-                            const image =
-                              item.image ||
-                              item.productImage ||
-                              item.product_image;
+                      {selectedOrder.items?.length > 0 ? (
+                        selectedOrder.items.map((item) => {
+                          const image =
+                            item.image ||
+                            item.productImage ||
+                            item.product_image;
 
-                            const productName =
-                              item.name ||
-                              item.productName ||
-                              item.product_name ||
-                              "Product";
+                          const productName =
+                            item.name ||
+                            item.productName ||
+                            item.product_name ||
+                            "Product";
 
-                            const itemStatus =
-                              item.status ||
-                              selectedOrder.status;
+                          const itemStatus =
+                            item.status || selectedOrder.status;
 
-                            const returnRequested =
-                              item.rmaRequested ||
-                              item.rma_requested;
+                          const returnRequested =
+                            item.rmaRequested || item.rma_requested;
 
-                            const returnStatus =
-                              item.rmaStatus ||
-                              item.rma_status;
+                          const returnStatus =
+                            item.rmaStatus || item.rma_status;
 
-                            const returnReason =
-                              item.rmaReason ||
-                              item.rma_reason;
+                          const returnReason =
+                            item.rmaReason || item.rma_reason;
 
-                            return (
-                              <div
-                                key={item.id}
-                                className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-sky-200 hover:shadow-md"
-                              >
-                                <div className="p-4 sm:p-5">
-                                  <div className="flex flex-col gap-4 sm:flex-row">
-                                    {/* IMAGE */}
+                          return (
+                            <div
+                              key={item.id}
+                              className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-sky-200 hover:shadow-md"
+                            >
+                              <div className="p-4 sm:p-5">
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                  {/* IMAGE */}
 
-                                    <div className="shrink-0">
-                                      {image ? (
-                                        <img
-                                          src={getImageURL(
-                                            image
-                                          )}
-                                          alt={
-                                            productName
+                                  <div className="shrink-0">
+                                    {image ? (
+                                      <img
+                                        src={getImageURL(image)}
+                                        alt={productName}
+                                        className="h-28 w-full rounded-2xl object-cover sm:h-28 sm:w-28"
+                                        onError={(event) => {
+                                          event.currentTarget.style.display =
+                                            "none";
+
+                                          if (
+                                            event.currentTarget
+                                              .nextElementSibling
+                                          ) {
+                                            event.currentTarget.nextElementSibling.style.display =
+                                              "flex";
                                           }
-                                          className="h-28 w-full rounded-2xl object-cover sm:h-28 sm:w-28"
-                                          onError={(
-                                            event
-                                          ) => {
-                                            event.currentTarget.style.display =
-                                              "none";
+                                        }}
+                                      />
+                                    ) : null}
 
-                                            if (
-                                              event
-                                                .currentTarget
-                                                .nextElementSibling
-                                            ) {
-                                              event.currentTarget.nextElementSibling.style.display =
-                                                "flex";
-                                            }
-                                          }}
-                                        />
-                                      ) : null}
-
-                                      <div
-                                        className={`${
-                                          image
-                                            ? "hidden"
-                                            : "flex"
-                                        } h-28 w-full items-center justify-center rounded-2xl bg-slate-100 text-4xl sm:h-28 sm:w-28`}
-                                      >
-                                        📦
-                                      </div>
-                                    </div>
-
-                                    {/* INFO */}
-
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                        <div>
-                                          <h3 className="text-lg font-black text-slate-800">
-                                            {
-                                              productName
-                                            }
-                                          </h3>
-
-                                          <p className="mt-1 text-xs text-slate-400">
-                                            Product ID:{" "}
-                                            {item.productId ||
-                                              item.product_id ||
-                                              "-"}
-                                          </p>
-                                        </div>
-
-                                        <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                          {itemStatus}
-                                        </span>
-                                      </div>
-
-                                      <div className="mt-3 flex flex-wrap gap-2">
-                                        <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                                          Qty:{" "}
-                                          {item.quantity ||
-                                            1}
-                                        </span>
-
-                                        {item.size && (
-                                          <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                                            Size:{" "}
-                                            {item.size}
-                                          </span>
-                                        )}
-
-                                        {item.color && (
-                                          <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
-                                            Color:{" "}
-                                            {item.color}
-                                          </span>
-                                        )}
-                                      </div>
-
-                                      <p className="mt-4 text-xl font-black text-slate-900">
-                                        ₹
-                                        {Number(
-                                          item.price ||
-                                            0
-                                        ).toLocaleString(
-                                          "en-IN"
-                                        )}
-                                      </p>
+                                    <div
+                                      className={`${
+                                        image ? "hidden" : "flex"
+                                      } h-28 w-full items-center justify-center rounded-2xl bg-slate-100 text-4xl sm:h-28 sm:w-28`}
+                                    >
+                                      📦
                                     </div>
                                   </div>
 
-                                  {/* RETURN */}
+                                  {/* INFO */}
 
-                                  {itemStatus ===
-                                    "Delivered" && (
-                                    <div className="mt-5 border-t border-slate-100 pt-4">
-                                      {returnRequested ? (
-                                        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                            <p className="font-bold text-orange-800">
-                                              Return Request
-                                            </p>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                      <div>
+                                        <h3 className="text-lg font-black text-slate-800">
+                                          {productName}
+                                        </h3>
 
-                                            <span className="w-fit rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
-                                              {returnStatus ||
-                                                "Requested"}
-                                            </span>
-                                          </div>
+                                        <p className="mt-1 text-xs text-slate-400">
+                                          Product ID:{" "}
+                                          {item.productId ||
+                                            item.product_id ||
+                                            "-"}
+                                        </p>
+                                      </div>
 
-                                          {returnReason && (
-                                            <p className="mt-2 text-sm text-orange-700">
-                                              <strong>
-                                                Reason:
-                                              </strong>{" "}
-                                              {
-                                                returnReason
-                                              }
-                                            </p>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setReturnItemData(
-                                              item
-                                            );
+                                      <span className="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                        {itemStatus}
+                                      </span>
+                                    </div>
 
-                                            setActionType(
-                                              "return"
-                                            );
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                                        Qty: {item.quantity || 1}
+                                      </span>
 
-                                            setActionReason(
-                                              ""
-                                            );
+                                      {item.size && (
+                                        <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                                          Size: {item.size}
+                                        </span>
+                                      )}
 
-                                            setError("");
-                                            setSuccess("");
-                                          }}
-                                          className="w-full rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700 transition hover:border-orange-500 hover:bg-orange-100 sm:w-auto"
-                                        >
-                                          ↩ Return Product
-                                        </button>
+                                      {item.color && (
+                                        <span className="rounded-lg bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                                          Color: {item.color}
+                                        </span>
                                       )}
                                     </div>
-                                  )}
+
+                                    <p className="mt-4 text-xl font-black text-slate-900">
+                                      ₹
+                                      {Number(item.price || 0).toLocaleString(
+                                        "en-IN",
+                                      )}
+                                    </p>
+                                  </div>
                                 </div>
+
+                                {/* RETURN */}
+
+                                {itemStatus === "Delivered" && (
+                                  <div className="mt-5 border-t border-slate-100 pt-4">
+                                    {returnRequested ? (
+                                      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                          <p className="font-bold text-orange-800">
+                                            Return Request
+                                          </p>
+
+                                          <span className="w-fit rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                                            {returnStatus || "Requested"}
+                                          </span>
+                                        </div>
+
+                                        {returnReason && (
+                                          <p className="mt-2 text-sm text-orange-700">
+                                            <strong>Reason:</strong>{" "}
+                                            {returnReason}
+                                          </p>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setReturnItemData(item);
+
+                                          setActionType("return");
+
+                                          setActionReason("");
+
+                                          setError("");
+                                          setSuccess("");
+                                        }}
+                                        className="w-full rounded-xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-bold text-orange-700 transition hover:border-orange-500 hover:bg-orange-100 sm:w-auto"
+                                      >
+                                        ↩ Return Product
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                            );
-                          }
-                        )
+                            </div>
+                          );
+                        })
                       ) : (
                         <div className="rounded-2xl bg-slate-50 p-8 text-center">
                           <p className="text-slate-500">
-                            No products found in this
-                            order.
+                            No products found in this order.
                           </p>
                         </div>
                       )}
                     </div>
                   </section>
-
+                  <br />
                   {/* =====================================================
                       ADDRESS + PAYMENT
                   ===================================================== */}
@@ -1069,29 +942,24 @@ function OrderTracking() {
                         <p className="font-black text-slate-800">
                           {selectedOrder.fullName ||
                             selectedOrder.full_name ||
-                            selectedOrder.addressDetails
-                              ?.full_name ||
+                            selectedOrder.addressDetails?.full_name ||
                             "Customer"}
                         </p>
 
                         <p className="mt-2 text-sm leading-6 text-slate-600">
                           {selectedOrder.address ||
                             selectedOrder.address_line ||
-                            selectedOrder.addressDetails
-                              ?.address_line ||
+                            selectedOrder.addressDetails?.address_line ||
                             "Address unavailable"}
                         </p>
 
                         <p className="mt-1 text-sm text-slate-600">
                           {selectedOrder.city || ""}
-                          {selectedOrder.city &&
-                          selectedOrder.state
+                          {selectedOrder.city && selectedOrder.state
                             ? ", "
                             : ""}
                           {selectedOrder.state || ""}{" "}
-                          {selectedOrder.pincode ||
-                            selectedOrder.pin ||
-                            ""}
+                          {selectedOrder.pincode || selectedOrder.pin || ""}
                         </p>
 
                         {selectedOrder.phone && (
@@ -1122,9 +990,7 @@ function OrderTracking() {
                       </div>
 
                       <div className="rounded-2xl bg-slate-50 p-5">
-                        <p className="text-sm text-slate-500">
-                          Payment Method
-                        </p>
+                        <p className="text-sm text-slate-500">Payment Method</p>
 
                         <p className="mt-1 text-lg font-black capitalize text-slate-800">
                           {selectedOrder.paymentMethod ||
@@ -1134,7 +1000,7 @@ function OrderTracking() {
                       </div>
                     </section>
                   </div>
-
+                  <br />
                   {/* =====================================================
                       ORDER SUMMARY
                   ===================================================== */}
@@ -1156,10 +1022,9 @@ function OrderTracking() {
 
                         <span className="font-bold text-slate-800">
                           ₹
-                          {Number(
-                            selectedOrder.subtotal ||
-                              0
-                          ).toLocaleString("en-IN")}
+                          {Number(selectedOrder.subtotal || 0).toLocaleString(
+                            "en-IN",
+                          )}
                         </span>
                       </div>
 
@@ -1171,7 +1036,7 @@ function OrderTracking() {
                           {Number(
                             selectedOrder.deliveryCharge ||
                               selectedOrder.delivery_charge ||
-                              0
+                              0,
                           ).toLocaleString("en-IN")}
                         </span>
                       </div>
@@ -1188,23 +1053,19 @@ function OrderTracking() {
                               selectedOrder.total ||
                                 selectedOrder.totalAmount ||
                                 selectedOrder.total_amount ||
-                                0
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
+                                0,
+                            ).toLocaleString("en-IN")}
                           </span>
                         </div>
                       </div>
                     </div>
                   </section>
-
+                  <br />
                   {/* =====================================================
                       CANCEL ORDER
                   ===================================================== */}
 
-                  {canCancelOrder(
-                    selectedOrder.status
-                  ) && (
+                  {canCancelOrder(selectedOrder.status) && (
                     <section className="rounded-3xl border border-red-100 bg-white p-5 shadow-sm sm:p-7">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -1217,8 +1078,7 @@ function OrderTracking() {
                           </h2>
 
                           <p className="mt-1 text-sm text-slate-500">
-                            You can cancel this order
-                            before it is shipped.
+                            You can cancel this order before it is shipped.
                           </p>
                         </div>
 
@@ -1247,7 +1107,7 @@ function OrderTracking() {
             </main>
           </div>
         )}
-
+        <br />
         {/* =====================================================
             ACTION MODAL
         ===================================================== */}
@@ -1298,55 +1158,46 @@ function OrderTracking() {
 
               {/* RETURN PRODUCT PREVIEW */}
 
-              {actionType === "return" &&
-                returnItemData && (
-                  <div className="mt-5 flex gap-3 rounded-2xl bg-orange-50 p-3">
-                    {(
-                      returnItemData.image ||
-                      returnItemData.productImage ||
-                      returnItemData.product_image
-                    ) ? (
-                      <img
-                        src={getImageURL(
-                          returnItemData.image ||
-                            returnItemData.productImage ||
-                            returnItemData.product_image
-                        )}
-                        alt="Product"
-                        className="h-16 w-16 rounded-xl object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-2xl">
-                        📦
-                      </div>
-                    )}
-
-                    <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-800">
-                        {returnItemData.name ||
-                          returnItemData.productName ||
-                          returnItemData.product_name ||
-                          "Product"}
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        Qty:{" "}
-                        {returnItemData.quantity ||
-                          1}
-                      </p>
+              {actionType === "return" && returnItemData && (
+                <div className="mt-5 flex gap-3 rounded-2xl bg-orange-50 p-3">
+                  {returnItemData.image ||
+                  returnItemData.productImage ||
+                  returnItemData.product_image ? (
+                    <img
+                      src={getImageURL(
+                        returnItemData.image ||
+                          returnItemData.productImage ||
+                          returnItemData.product_image,
+                      )}
+                      alt="Product"
+                      className="h-16 w-16 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-2xl">
+                      📦
                     </div>
+                  )}
+
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-800">
+                      {returnItemData.name ||
+                        returnItemData.productName ||
+                        returnItemData.product_name ||
+                        "Product"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Qty: {returnItemData.quantity || 1}
+                    </p>
                   </div>
-                )}
+                </div>
+              )}
 
               {/* TEXTAREA */}
 
               <textarea
                 value={actionReason}
-                onChange={(event) =>
-                  setActionReason(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => setActionReason(event.target.value)}
                 rows={4}
                 disabled={actionLoading}
                 className="mt-5 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100"
@@ -1376,35 +1227,22 @@ function OrderTracking() {
                 {actionType === "cancel" ? (
                   <button
                     type="button"
-                    disabled={
-                      actionLoading ||
-                      !actionReason.trim()
-                    }
+                    disabled={actionLoading || !actionReason.trim()}
                     onClick={cancelOrder}
                     className="w-full rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   >
-                    {actionLoading
-                      ? "Cancelling..."
-                      : "Confirm Cancel"}
+                    {actionLoading ? "Cancelling..." : "Confirm Cancel"}
                   </button>
                 ) : (
                   <button
                     type="button"
                     disabled={
-                      actionLoading ||
-                      !actionReason.trim() ||
-                      !returnItemData
+                      actionLoading || !actionReason.trim() || !returnItemData
                     }
-                    onClick={() =>
-                      returnItem(
-                        returnItemData
-                      )
-                    }
+                    onClick={() => returnItem(returnItemData)}
                     className="w-full rounded-xl bg-orange-600 px-5 py-3 font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                   >
-                    {actionLoading
-                      ? "Submitting..."
-                      : "Submit Return"}
+                    {actionLoading ? "Submitting..." : "Submit Return"}
                   </button>
                 )}
               </div>

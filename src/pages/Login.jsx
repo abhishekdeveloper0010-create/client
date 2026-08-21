@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import {
   FaUser,
   FaLock,
@@ -70,19 +71,20 @@ function Login() {
     try {
       setLoading(true);
 
-      // ---------------------------------------------
-      // Remove old/expired token before login
-      // ---------------------------------------------
-
+      // Remove old token
       localStorage.removeItem("token");
       localStorage.removeItem("authToken");
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
 
       const API_URL =
         import.meta.env.VITE_SERVER_API_URL ||
         "http://localhost:4000/api";
 
-      console.log("LOGIN API:", `${API_URL}/auth/login`);
+      console.log(
+        "LOGIN API:",
+        `${API_URL}/auth/login`
+      );
 
       const response = await fetch(
         `${API_URL}/auth/login`,
@@ -110,7 +112,11 @@ function Login() {
 
       let data;
 
-      if (contentType.includes("application/json")) {
+      if (
+        contentType.includes(
+          "application/json"
+        )
+      ) {
         data = await response.json();
       } else {
         const text = await response.text();
@@ -130,9 +136,9 @@ function Login() {
         data
       );
 
-      // ---------------------------------------------
+      // =================================================
       // LOGIN FAILED
-      // ---------------------------------------------
+      // =================================================
 
       if (!response.ok) {
         alert(
@@ -143,9 +149,9 @@ function Login() {
         return;
       }
 
-      // ---------------------------------------------
+      // =================================================
       // TOKEN CHECK
-      // ---------------------------------------------
+      // =================================================
 
       if (!data.token) {
         console.error(
@@ -160,18 +166,18 @@ function Login() {
         return;
       }
 
-      // ---------------------------------------------
+      // =================================================
       // SAVE TOKEN
-      // ---------------------------------------------
+      // =================================================
 
       localStorage.setItem(
         "token",
         data.token
       );
 
-      // ---------------------------------------------
+      // =================================================
       // SAVE USER
-      // ---------------------------------------------
+      // =================================================
 
       if (data.user) {
         localStorage.setItem(
@@ -180,9 +186,9 @@ function Login() {
         );
       }
 
-      // ---------------------------------------------
+      // =================================================
       // AUTH EVENT
-      // ---------------------------------------------
+      // =================================================
 
       window.dispatchEvent(
         new Event("authChanged")
@@ -190,11 +196,13 @@ function Login() {
 
       alert("Login successful!");
 
-      // ---------------------------------------------
+      // =================================================
       // HOME
-      // ---------------------------------------------
+      // =================================================
 
-      navigate("/");
+      navigate("/", {
+        replace: true,
+      });
 
     } catch (error) {
       console.error(
@@ -206,7 +214,6 @@ function Login() {
         error.message ||
           "Server se connection nahi ho raha."
       );
-
     } finally {
       setLoading(false);
     }

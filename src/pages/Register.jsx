@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import {
   FaUser,
   FaEnvelope,
@@ -16,7 +17,6 @@ function Register() {
     confirmPassword: "",
   });
 
-  // Separate errors
   const [errors, setErrors] = useState({
     name: "",
     email: "",
@@ -25,12 +25,18 @@ function Register() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] =
     useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
-  // Input Change
+  // =====================================================
+  // INPUT CHANGE
+  // =====================================================
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -39,95 +45,258 @@ function Register() {
       [name]: value,
     }));
 
-    // Current field ki error remove
     setErrors((prev) => ({
       ...prev,
       [name]: "",
     }));
   };
 
-  // Form Submit
- const handleSubmit = async (event) => {
-  event.preventDefault();
+  // =====================================================
+  // FORM SUBMIT
+  // =====================================================
 
-  const newErrors = {
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  };
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-  if (!formData.name.trim()) {
-    newErrors.name = "Please enter your username.";
-  }
+    const newErrors = {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    };
 
-  if (!formData.email.trim()) {
-    newErrors.email = "Please enter your email.";
-  }
+    // NAME
 
-  if (!formData.password.trim()) {
-    newErrors.password = "Please enter your password.";
-  } else if (formData.password.length < 6) {
-    newErrors.password = "Password must be at least 6 characters.";
-  }
+    if (!formData.name.trim()) {
+      newErrors.name =
+        "Please enter your username.";
+    }
 
-  if (!formData.confirmPassword.trim()) {
-    newErrors.confirmPassword = "Please confirm your password.";
-  } else if (formData.password !== formData.confirmPassword) {
-    newErrors.confirmPassword = "Passwords do not match.";
-  }
+    // EMAIL
 
-  setErrors(newErrors);
+    if (!formData.email.trim()) {
+      newErrors.email =
+        "Please enter your email.";
+    }
 
-  if (
-    newErrors.name ||
-    newErrors.email ||
-    newErrors.password ||
-    newErrors.confirmPassword
-  ) {
-    return;
-  }
+    // PASSWORD
 
-  try {
-   const response = await fetch(
-  `${import.meta.env.VITE_SERVER_API_URL}/auth/register`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-    }),
-  }
-);
+    if (!formData.password.trim()) {
+      newErrors.password =
+        "Please enter your password.";
+    } else if (
+      formData.password.length < 6
+    ) {
+      newErrors.password =
+        "Password must be at least 6 characters.";
+    }
 
-    const data = await response.json();
+    // CONFIRM PASSWORD
 
-    if (!response.ok) {
-      alert(data.message || "Registration failed.");
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword =
+        "Please confirm your password.";
+    } else if (
+      formData.password !==
+      formData.confirmPassword
+    ) {
+      newErrors.confirmPassword =
+        "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+
+    if (
+      newErrors.name ||
+      newErrors.email ||
+      newErrors.password ||
+      newErrors.confirmPassword
+    ) {
       return;
     }
 
-    console.log("REGISTER SUCCESS:", data);
+    try {
+      setLoading(true);
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+      // =================================================
+      // REMOVE OLD AUTH
+      // =================================================
 
-    alert("Registration successful!");
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
 
-    navigate("/login");
-  } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    alert("Server se connection nahi ho raha.");
-  }
-};
+      const API_URL =
+        import.meta.env.VITE_SERVER_API_URL ||
+        "http://localhost:4000/api";
+
+      console.log(
+        "REGISTER API:",
+        `${API_URL}/auth/register`
+      );
+
+      const response = await fetch(
+        `${API_URL}/auth/register`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          body: JSON.stringify({
+            name: formData.name.trim(),
+            email: formData.email
+              .trim()
+              .toLowerCase(),
+            password: formData.password,
+          }),
+        }
+      );
+
+      const contentType =
+        response.headers.get("content-type") || "";
+
+      let data;
+
+      if (
+        contentType.includes(
+          "application/json"
+        )
+      ) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+
+        console.error(
+          "SERVER RESPONSE:",
+          text
+        );
+
+        throw new Error(
+          "Server returned an invalid response."
+        );
+      }
+
+      console.log(
+        "REGISTER RESPONSE:",
+        data
+      );
+
+      // =================================================
+      // ALREADY REGISTERED / OTHER ERROR
+      // =================================================
+
+      if (!response.ok) {
+
+        if (response.status === 409) {
+          alert(
+            "This email is already registered. Please login."
+          );
+
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
+        }
+
+        alert(
+          data.message ||
+            "Registration failed."
+        );
+
+        return;
+      }
+
+      // =================================================
+      // TOKEN CHECK
+      // =================================================
+
+      if (!data.token) {
+        console.error(
+          "REGISTER TOKEN NOT RECEIVED:",
+          data
+        );
+
+        alert(
+          "Registration successful but login token was not received."
+        );
+
+        navigate("/login");
+
+        return;
+      }
+
+      // =================================================
+      // AUTOMATIC LOGIN
+      // =================================================
+
+      localStorage.setItem(
+        "token",
+        data.token
+      );
+
+      // =================================================
+      // SAVE USER
+      // =================================================
+
+      if (data.user) {
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user)
+        );
+      }
+
+      // =================================================
+      // AUTH EVENT
+      // =================================================
+
+      window.dispatchEvent(
+        new Event("authChanged")
+      );
+
+      // =================================================
+      // SUCCESS
+      // =================================================
+
+      alert(
+        "Registration successful! Welcome to Apple Blossom."
+      );
+
+      // =================================================
+      // IMPORTANT:
+      // Login page nahi jayega
+      // Direct Home
+      // =================================================
+
+      navigate("/", {
+        replace: true,
+      });
+
+    } catch (error) {
+      console.error(
+        "REGISTER ERROR:",
+        error
+      );
+
+      alert(
+        error.message ||
+          "Server se connection nahi ho raha."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <section className="min-h-screen bg-[#081b24] flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* MAIN REGISTER BOX */}
+
       <div
         className="
           relative w-full max-w-[1200px] min-h-[650px]
@@ -136,23 +305,30 @@ function Register() {
           shadow-[0_0_25px_rgba(34,211,238,0.35)]
         "
       >
-        {/* Dark Background */}
+
+        {/* DARK BACKGROUND */}
+
         <div className="absolute inset-0 bg-[#0d1f29]" />
 
-        {/* LEFT GRADIENT BACKGROUND */}
+        {/* LEFT GRADIENT */}
+
         <div
           className="
             absolute inset-y-0 left-0 w-[62%]
             bg-gradient-to-r
-            from-[#147584] via-[#1c8794] to-[#20b8c6]
+            from-[#147584]
+            via-[#1c8794]
+            to-[#20b8c6]
             [clip-path:polygon(0_0,65%_0,30%_100%,0_100%)]
           "
         />
 
         {/* MAIN CONTENT */}
+
         <div className="relative z-10 flex min-h-[650px]">
-          
-          {/* LEFT WELCOME SECTION */}
+
+          {/* LEFT WELCOME */}
+
           <div
             className="
               hidden lg:flex w-[48%]
@@ -160,7 +336,9 @@ function Register() {
               px-12 py-14
             "
           >
+
             <div className="max-w-[330px]">
+
               <h2 className="text-5xl font-bold tracking-wide text-white">
                 WELCOME!
               </h2>
@@ -170,10 +348,13 @@ function Register() {
                 <br />
                 Family have a Great Day
               </p>
+
             </div>
+
           </div>
 
-          {/* RIGHT REGISTER SECTION */}
+          {/* RIGHT REGISTER */}
+
           <div
             className="
               w-full lg:w-[52%]
@@ -183,17 +364,19 @@ function Register() {
               lg:px-20 lg:py-14
             "
           >
+
             <div className="w-full max-w-[420px]">
-              
-              {/* Heading */}
+
               <h1 className="pb-8 text-center text-4xl font-bold text-white sm:text-5xl">
                 Sign Up
               </h1>
 
               <form onSubmit={handleSubmit}>
-                
+
                 {/* USERNAME */}
+
                 <div className="pb-5">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Username
                   </label>
@@ -209,6 +392,7 @@ function Register() {
                       }
                     `}
                   >
+
                     <FaUser
                       className={`
                         shrink-0 text-lg
@@ -233,6 +417,7 @@ function Register() {
                         placeholder:text-slate-500
                       "
                     />
+
                   </div>
 
                   {errors.name && (
@@ -240,10 +425,13 @@ function Register() {
                       {errors.name}
                     </p>
                   )}
+
                 </div>
 
                 {/* EMAIL */}
+
                 <div className="pb-5">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Email
                   </label>
@@ -259,6 +447,7 @@ function Register() {
                       }
                     `}
                   >
+
                     <FaEnvelope
                       className={`
                         shrink-0 text-lg
@@ -283,6 +472,7 @@ function Register() {
                         placeholder:text-slate-500
                       "
                     />
+
                   </div>
 
                   {errors.email && (
@@ -290,10 +480,13 @@ function Register() {
                       {errors.email}
                     </p>
                   )}
+
                 </div>
 
                 {/* PASSWORD */}
+
                 <div className="pb-5">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Password
                   </label>
@@ -309,7 +502,7 @@ function Register() {
                       }
                     `}
                   >
-                    {/* Lock LEFT */}
+
                     <FaLock
                       className={`
                         shrink-0 text-lg
@@ -323,7 +516,9 @@ function Register() {
 
                     <input
                       type={
-                        showPassword ? "text" : "password"
+                        showPassword
+                          ? "text"
+                          : "password"
                       }
                       name="password"
                       value={formData.password}
@@ -337,11 +532,12 @@ function Register() {
                       "
                     />
 
-                    {/* Eye RIGHT */}
                     <button
                       type="button"
                       onClick={() =>
-                        setShowPassword((prev) => !prev)
+                        setShowPassword(
+                          (prev) => !prev
+                        )
                       }
                       className="
                         shrink-0 text-lg text-cyan-400
@@ -355,6 +551,7 @@ function Register() {
                         <FaEye />
                       )}
                     </button>
+
                   </div>
 
                   {errors.password && (
@@ -362,10 +559,13 @@ function Register() {
                       {errors.password}
                     </p>
                   )}
+
                 </div>
 
                 {/* CONFIRM PASSWORD */}
+
                 <div className="pb-8">
+
                   <label className="mb-2 block text-lg text-slate-300">
                     Confirm Password
                   </label>
@@ -381,7 +581,7 @@ function Register() {
                       }
                     `}
                   >
-                    {/* Lock LEFT */}
+
                     <FaLock
                       className={`
                         shrink-0 text-lg
@@ -400,7 +600,9 @@ function Register() {
                           : "password"
                       }
                       name="confirmPassword"
-                      value={formData.confirmPassword}
+                      value={
+                        formData.confirmPassword
+                      }
                       onChange={handleChange}
                       placeholder="Confirm your password"
                       className="
@@ -411,7 +613,6 @@ function Register() {
                       "
                     />
 
-                    {/* Eye RIGHT */}
                     <button
                       type="button"
                       onClick={() =>
@@ -431,6 +632,7 @@ function Register() {
                         <FaEye />
                       )}
                     </button>
+
                   </div>
 
                   {errors.confirmPassword && (
@@ -438,29 +640,40 @@ function Register() {
                       {errors.confirmPassword}
                     </p>
                   )}
+
                 </div>
 
                 {/* REGISTER BUTTON */}
+
                 <button
                   type="submit"
+                  disabled={loading}
                   className="
                     w-full rounded-full
                     border-2 border-cyan-300
                     bg-gradient-to-b
-                    from-[#38d4e5] to-[#08717e]
+                    from-[#38d4e5]
+                    to-[#08717e]
                     py-3 text-xl font-bold text-white
                     shadow-[0_4px_12px_rgba(34,211,238,0.35)]
                     transition duration-300
                     hover:scale-[1.02]
                     hover:shadow-[0_5px_20px_rgba(34,211,238,0.55)]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
                   "
                 >
-                  Register
+                  {loading
+                    ? "Creating Account..."
+                    : "Register"}
                 </button>
 
                 {/* LOGIN LINK */}
+
                 <p className="pt-5 text-center text-base text-slate-300">
+
                   Already have an account?{" "}
+
                   <Link
                     to="/login"
                     className="
@@ -471,12 +684,19 @@ function Register() {
                   >
                     Login
                   </Link>
+
                 </p>
+
               </form>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
+
     </section>
   );
 }

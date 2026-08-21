@@ -6,15 +6,11 @@ function ProductSection({
   selectedCategory = "All",
   onCategoryChange,
   filterData = {},
-
   searchTerm = "",
-
   loading = false,
-
   currentPage = 1,
   totalPages = 1,
   totalProducts = 0,
-
   onPageChange,
 }) {
   // =====================================================
@@ -22,10 +18,11 @@ function ProductSection({
   // =====================================================
 
   const imageURL =
-    import.meta.env.VITE_SERVER_IMAGES_URL || "http://localhost:4000/images";
+    import.meta.env.VITE_SERVER_IMAGES_URL ||
+    "http://localhost:4000/images";
 
   // =====================================================
-  // FIXED CATEGORIES
+  // DEFAULT CATEGORIES
   // =====================================================
 
   const defaultCategories = [
@@ -62,7 +59,14 @@ function ProductSection({
   const colors =
     filterData.colors?.length > 0
       ? filterData.colors
-      : ["White", "Multicolor", "Black", "Blue", "Green", "Pink"];
+      : [
+          "White",
+          "Multicolor",
+          "Black",
+          "Blue",
+          "Green",
+          "Pink",
+        ];
 
   const fabrics =
     filterData.fabrics?.length > 0
@@ -144,31 +148,21 @@ function ProductSection({
   // =====================================================
 
   const [selectedBrands, setSelectedBrands] = useState([]);
-
   const [selectedColors, setSelectedColors] = useState([]);
-
   const [selectedFabrics, setSelectedFabrics] = useState([]);
-
   const [selectedSizes, setSelectedSizes] = useState([]);
-
   const [selectedPatterns, setSelectedPatterns] = useState([]);
-
   const [selectedGenders, setSelectedGenders] = useState([]);
-
   const [selectedFits, setSelectedFits] = useState([]);
-
   const [selectedOccasions, setSelectedOccasions] = useState([]);
 
   const [selectedPrice, setSelectedPrice] = useState("");
-
   const [selectedRating, setSelectedRating] = useState("");
-
   const [selectedDiscount, setSelectedDiscount] = useState("");
 
   const [selectedOffers, setSelectedOffers] = useState([]);
 
   const [newArrivals, setNewArrivals] = useState(false);
-
   const [includeOutOfStock, setIncludeOutOfStock] = useState(false);
 
   // =====================================================
@@ -261,7 +255,7 @@ function ProductSection({
   ];
 
   // =====================================================
-  // DISCOUNT
+  // DISCOUNTS
   // =====================================================
 
   const discounts = [
@@ -291,7 +285,10 @@ function ProductSection({
   // OFFERS
   // =====================================================
 
-  const offers = ["Buy More, Save More", "Special Price"];
+  const offers = [
+    "Buy More, Save More",
+    "Special Price",
+  ];
 
   // =====================================================
   // TOGGLE ACCORDION
@@ -308,9 +305,17 @@ function ProductSection({
   // TOGGLE CHECKBOX
   // =====================================================
 
-  const toggleCheckbox = (value, setter, currentValues) => {
+  const toggleCheckbox = (
+    value,
+    setter,
+    currentValues
+  ) => {
     if (currentValues.includes(value)) {
-      setter(currentValues.filter((item) => item !== value));
+      setter(
+        currentValues.filter(
+          (item) => item !== value
+        )
+      );
     } else {
       setter([...currentValues, value]);
     }
@@ -342,7 +347,21 @@ function ProductSection({
   ]);
 
   // =====================================================
-  // FILTER CURRENT DATABASE PAGE
+  // LOCAL FILTERS
+  // =====================================================
+  //
+  // IMPORTANT:
+  // CATEGORY FILTER YAHAN NAHI HOGA.
+  //
+  // Category backend handle karta hai:
+  //
+  // category_id = 1 => Shirts
+  // category_id = 2 => Dresses
+  // category_id = 3 => Beauty
+  // category_id = 4 => Bangles
+  // category_id = 5 => Shoes
+  // category_id = 6 => Slippers
+  //
   // =====================================================
 
   const filteredProducts = useMemo(() => {
@@ -353,20 +372,27 @@ function ProductSection({
     // ===================================================
 
     if (searchTerm?.trim()) {
-      const searchText = searchTerm.toLowerCase().trim();
+      const searchText =
+        searchTerm.toLowerCase().trim();
 
       result = result.filter((product) => {
         const title = String(
-          product.title || product.name || "",
+          product.title ||
+            product.name ||
+            ""
         ).toLowerCase();
 
         const description = String(
-          product.description || "",
+          product.description || ""
         ).toLowerCase();
 
-        const category = String(product.category || "").toLowerCase();
+        const category = String(
+          product.category || ""
+        ).toLowerCase();
 
-        const brand = String(product.brand || "").toLowerCase();
+        const brand = String(
+          product.brand || ""
+        ).toLowerCase();
 
         return (
           title.includes(searchText) ||
@@ -378,24 +404,14 @@ function ProductSection({
     }
 
     // ===================================================
-    // CATEGORY
-    // ===================================================
-
-    if (selectedCategory && selectedCategory !== "All") {
-      result = result.filter(
-        (product) =>
-          String(product.category || "").toLowerCase() ===
-          String(selectedCategory).toLowerCase(),
-      );
-    }
-
-    // ===================================================
     // BRAND
     // ===================================================
 
     if (selectedBrands.length > 0) {
       result = result.filter((product) =>
-        selectedBrands.includes(product.brand),
+        selectedBrands.includes(
+          product.brand
+        )
       );
     }
 
@@ -405,7 +421,9 @@ function ProductSection({
 
     if (selectedColors.length > 0) {
       result = result.filter((product) =>
-        selectedColors.includes(product.color),
+        selectedColors.includes(
+          product.color
+        )
       );
     }
 
@@ -415,7 +433,9 @@ function ProductSection({
 
     if (selectedFabrics.length > 0) {
       result = result.filter((product) =>
-        selectedFabrics.includes(product.fabric),
+        selectedFabrics.includes(
+          product.fabric
+        )
       );
     }
 
@@ -425,19 +445,32 @@ function ProductSection({
 
     if (selectedSizes.length > 0) {
       result = result.filter((product) => {
-        if (Array.isArray(product.size)) {
-          return product.size.some((size) =>
-            selectedSizes.includes(String(size)),
+        const productSize =
+          product.sizes ??
+          product.size ??
+          "";
+
+        if (Array.isArray(productSize)) {
+          return productSize.some((size) =>
+            selectedSizes.includes(
+              String(size).trim()
+            )
           );
         }
 
-        if (typeof product.size === "string") {
-          const productSizes = product.size
-            .split(",")
-            .map((size) => size.trim());
+        if (
+          typeof productSize === "string"
+        ) {
+          const productSizes =
+            productSize
+              .split(",")
+              .map((size) =>
+                size.trim()
+              );
 
-          return productSizes.some((size) =>
-            selectedSizes.includes(size),
+          return productSizes.some(
+            (size) =>
+              selectedSizes.includes(size)
           );
         }
 
@@ -447,41 +480,49 @@ function ProductSection({
 
     // ===================================================
     // PATTERN
-    // ===================================================
+    // =====================================================
 
     if (selectedPatterns.length > 0) {
       result = result.filter((product) =>
-        selectedPatterns.includes(product.pattern),
+        selectedPatterns.includes(
+          product.pattern
+        )
       );
     }
 
     // ===================================================
     // GENDER
-    // ===================================================
+    // =====================================================
 
     if (selectedGenders.length > 0) {
       result = result.filter((product) =>
-        selectedGenders.includes(product.gender),
+        selectedGenders.includes(
+          product.gender
+        )
       );
     }
 
     // ===================================================
     // FIT
-    // ===================================================
+    // =====================================================
 
     if (selectedFits.length > 0) {
       result = result.filter((product) =>
-        selectedFits.includes(product.fit),
+        selectedFits.includes(
+          product.fit
+        )
       );
     }
 
     // ===================================================
     // OCCASION
-    // ===================================================
+    // =====================================================
 
     if (selectedOccasions.length > 0) {
       result = result.filter((product) =>
-        selectedOccasions.includes(product.occasion),
+        selectedOccasions.includes(
+          product.occasion
+        )
       );
     }
 
@@ -490,16 +531,25 @@ function ProductSection({
     // ===================================================
 
     if (selectedPrice) {
-      const range = priceOptions.find(
-        (item) => item.value === selectedPrice,
-      );
+      const range =
+        priceOptions.find(
+          (item) =>
+            item.value === selectedPrice
+        );
 
       if (range) {
-        result = result.filter((product) => {
-          const price = Number(product.price || 0);
+        result = result.filter(
+          (product) => {
+            const price = Number(
+              product.price || 0
+            );
 
-          return price >= range.min && price <= range.max;
-        });
+            return (
+              price >= range.min &&
+              price <= range.max
+            );
+          }
+        );
       }
     }
 
@@ -510,7 +560,8 @@ function ProductSection({
     if (selectedRating) {
       result = result.filter(
         (product) =>
-          Number(product.rating || 0) >= Number(selectedRating),
+          Number(product.rating || 0) >=
+          Number(selectedRating)
       );
     }
 
@@ -519,19 +570,34 @@ function ProductSection({
     // ===================================================
 
     if (selectedDiscount) {
-      result = result.filter((product) => {
-        const oldPrice = Number(product.oldPrice || 0);
-        const price = Number(product.price || 0);
+      result = result.filter(
+        (product) => {
+          const oldPrice = Number(
+            product.oldPrice || 0
+          );
 
-        if (!oldPrice || oldPrice <= price) {
-          return false;
+          const price = Number(
+            product.price || 0
+          );
+
+          if (
+            !oldPrice ||
+            oldPrice <= price
+          ) {
+            return false;
+          }
+
+          const discount =
+            ((oldPrice - price) /
+              oldPrice) *
+            100;
+
+          return (
+            discount >=
+            Number(selectedDiscount)
+          );
         }
-
-        const discount =
-          ((oldPrice - price) / oldPrice) * 100;
-
-        return discount >= Number(selectedDiscount);
-      });
+      );
     }
 
     // ===================================================
@@ -539,15 +605,22 @@ function ProductSection({
     // ===================================================
 
     if (selectedOffers.length > 0) {
-      result = result.filter((product) => {
-        const offer = String(
-          product.offerType || product.offer || "",
-        ).toLowerCase();
+      result = result.filter(
+        (product) => {
+          const offer = String(
+            product.offerType ||
+              product.offer ||
+              ""
+          ).toLowerCase();
 
-        return selectedOffers.some((selectedOffer) =>
-          offer.includes(selectedOffer.toLowerCase()),
-        );
-      });
+          return selectedOffers.some(
+            (selectedOffer) =>
+              offer.includes(
+                selectedOffer.toLowerCase()
+              )
+          );
+        }
+      );
     }
 
     // ===================================================
@@ -559,7 +632,8 @@ function ProductSection({
         (product) =>
           product.newArrival === true ||
           product.newArrival === 1 ||
-          product.newArrival === "true",
+          product.newArrival === "1" ||
+          product.newArrival === "true"
       );
     }
 
@@ -568,25 +642,42 @@ function ProductSection({
     // ===================================================
 
     if (!includeOutOfStock) {
-      result = result.filter((product) => {
-        if (product.inStock === undefined) {
+      result = result.filter(
+        (product) => {
+          if (
+            product.inStock ===
+              undefined &&
+            product.stock === undefined
+          ) {
+            return true;
+          }
+
+          if (
+            Number(product.stock) <= 0
+          ) {
+            return false;
+          }
+
+          if (
+            product.inStock !== undefined
+          ) {
+            return (
+              product.inStock === true ||
+              product.inStock === 1 ||
+              product.inStock === "1" ||
+              product.inStock === "true"
+            );
+          }
+
           return true;
         }
-
-        return (
-          product.inStock === true ||
-          product.inStock === 1 ||
-          product.inStock === "1" ||
-          product.inStock === "true"
-        );
-      });
+      );
     }
 
     return result;
   }, [
     products,
     searchTerm,
-    selectedCategory,
     selectedBrands,
     selectedColors,
     selectedFabrics,
@@ -610,11 +701,18 @@ function ProductSection({
   const getPageNumbers = () => {
     const pages = [];
 
-    const total = Number(totalPages) || 1;
-    const current = Number(currentPage) || 1;
+    const total =
+      Number(totalPages) || 1;
+
+    const current =
+      Number(currentPage) || 1;
 
     if (total <= 7) {
-      for (let i = 1; i <= total; i++) {
+      for (
+        let i = 1;
+        i <= total;
+        i++
+      ) {
         pages.push(i);
       }
 
@@ -627,11 +725,21 @@ function ProductSection({
       pages.push("left-dots");
     }
 
-    const start = Math.max(2, current - 1);
+    const start = Math.max(
+      2,
+      current - 1
+    );
 
-    const end = Math.min(total - 1, current + 1);
+    const end = Math.min(
+      total - 1,
+      current + 1
+    );
 
-    for (let i = start; i <= end; i++) {
+    for (
+      let i = start;
+      i <= end;
+      i++
+    ) {
       pages.push(i);
     }
 
@@ -661,7 +769,6 @@ function ProductSection({
     setSelectedPrice("");
     setSelectedRating("");
     setSelectedDiscount("");
-
     setSelectedOffers([]);
 
     setNewArrivals(false);
@@ -701,14 +808,17 @@ function ProductSection({
     hasValue = false,
     onClear,
   }) => {
-    const isOpen = openSections[section];
+    const isOpen =
+      openSections[section];
 
     return (
       <div className="border-b border-slate-200 py-5">
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => toggleSection(section)}
+            onClick={() =>
+              toggleSection(section)
+            }
             className="flex flex-1 items-center justify-between text-left"
           >
             <span className="text-lg font-bold text-slate-800">
@@ -731,7 +841,11 @@ function ProductSection({
           )}
         </div>
 
-        {isOpen && <div className="mt-4">{children}</div>}
+        {isOpen && (
+          <div className="mt-4">
+            {children}
+          </div>
+        )}
       </div>
     );
   };
@@ -795,10 +909,12 @@ function ProductSection({
   const productsPerPage = 8;
 
   const firstProductIndex =
-    (Number(currentPage) - 1) * productsPerPage;
+    (Number(currentPage) - 1) *
+    productsPerPage;
 
   const lastProductIndex =
-    firstProductIndex + products.length;
+    firstProductIndex +
+    products.length;
 
   // =====================================================
   // RENDER
@@ -807,6 +923,7 @@ function ProductSection({
   return (
     <section className="bg-sky-50 p-4 sm:p-6 lg:p-10">
       <div className="rounded-3xl bg-cyan-800 p-4 sm:p-6">
+
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[350px_minmax(0,1fr)]">
 
           {/* =================================================
@@ -852,41 +969,55 @@ function ProductSection({
             <FilterSection
               title="CATEGORIES"
               section="categories"
-              hasValue={selectedCategory !== "All"}
+              hasValue={
+                selectedCategory !== "All"
+              }
               onClear={clearCategory}
             >
-              {categories.map((category) => (
-                <label
-                  key={category}
-                  className="flex cursor-pointer items-center gap-3 py-2"
-                >
-                  <input
-                    type="radio"
-                    name="category"
-                    checked={selectedCategory === category}
-                    onChange={() => {
-                      if (onCategoryChange) {
-                        onCategoryChange(category);
-                      }
-
-                      if (onPageChange) {
-                        onPageChange(1);
-                      }
-                    }}
-                    className="h-5 w-5 accent-cyan-800"
-                  />
-
-                  <span
-                    className={
-                      selectedCategory === category
-                        ? "font-bold text-cyan-800"
-                        : "text-slate-700"
-                    }
+              {categories.map(
+                (category) => (
+                  <label
+                    key={category}
+                    className="flex cursor-pointer items-center gap-3 py-2"
                   >
-                    {category}
-                  </span>
-                </label>
-              ))}
+                    <input
+                      type="radio"
+                      name="category"
+                      checked={
+                        selectedCategory ===
+                        category
+                      }
+                      onChange={() => {
+                        if (
+                          onCategoryChange
+                        ) {
+                          onCategoryChange(
+                            category
+                          );
+                        }
+
+                        if (
+                          onPageChange
+                        ) {
+                          onPageChange(1);
+                        }
+                      }}
+                      className="h-5 w-5 accent-cyan-800"
+                    />
+
+                    <span
+                      className={
+                        selectedCategory ===
+                        category
+                          ? "font-bold text-cyan-800"
+                          : "text-slate-700"
+                      }
+                    >
+                      {category}
+                    </span>
+                  </label>
+                )
+              )}
             </FilterSection>
 
             {/* =================================================
@@ -896,22 +1027,29 @@ function ProductSection({
             <FilterSection
               title="Brand"
               section="brand"
-              hasValue={selectedBrands.length > 0}
-              onClear={() => setSelectedBrands([])}
+              hasValue={
+                selectedBrands.length > 0
+              }
+              onClear={() =>
+                setSelectedBrands([])
+              }
             >
-              {(showMoreBrands
-                ? brands
-                : brands.slice(0, 6)
+              {(
+                showMoreBrands
+                  ? brands
+                  : brands.slice(0, 6)
               ).map((brand) => (
                 <CheckboxOption
                   key={brand}
                   label={brand}
-                  checked={selectedBrands.includes(brand)}
+                  checked={selectedBrands.includes(
+                    brand
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       brand,
                       setSelectedBrands,
-                      selectedBrands,
+                      selectedBrands
                     )
                   }
                 />
@@ -921,7 +1059,9 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMoreBrands(!showMoreBrands)
+                    setShowMoreBrands(
+                      !showMoreBrands
+                    )
                   }
                   className="mt-2 text-sm font-semibold text-cyan-700"
                 >
@@ -939,22 +1079,29 @@ function ProductSection({
             <FilterSection
               title="Color"
               section="color"
-              hasValue={selectedColors.length > 0}
-              onClear={() => setSelectedColors([])}
+              hasValue={
+                selectedColors.length > 0
+              }
+              onClear={() =>
+                setSelectedColors([])
+              }
             >
-              {(showMoreColors
-                ? colors
-                : colors.slice(0, 6)
+              {(
+                showMoreColors
+                  ? colors
+                  : colors.slice(0, 6)
               ).map((color) => (
                 <CheckboxOption
                   key={color}
                   label={color}
-                  checked={selectedColors.includes(color)}
+                  checked={selectedColors.includes(
+                    color
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       color,
                       setSelectedColors,
-                      selectedColors,
+                      selectedColors
                     )
                   }
                 />
@@ -964,7 +1111,9 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMoreColors(!showMoreColors)
+                    setShowMoreColors(
+                      !showMoreColors
+                    )
                   }
                   className="mt-2 text-sm font-semibold text-cyan-700"
                 >
@@ -982,22 +1131,29 @@ function ProductSection({
             <FilterSection
               title="Fabric"
               section="fabric"
-              hasValue={selectedFabrics.length > 0}
-              onClear={() => setSelectedFabrics([])}
+              hasValue={
+                selectedFabrics.length > 0
+              }
+              onClear={() =>
+                setSelectedFabrics([])
+              }
             >
-              {(showMoreFabrics
-                ? fabrics
-                : fabrics.slice(0, 6)
+              {(
+                showMoreFabrics
+                  ? fabrics
+                  : fabrics.slice(0, 6)
               ).map((fabric) => (
                 <CheckboxOption
                   key={fabric}
                   label={fabric}
-                  checked={selectedFabrics.includes(fabric)}
+                  checked={selectedFabrics.includes(
+                    fabric
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       fabric,
                       setSelectedFabrics,
-                      selectedFabrics,
+                      selectedFabrics
                     )
                   }
                 />
@@ -1007,7 +1163,9 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMoreFabrics(!showMoreFabrics)
+                    setShowMoreFabrics(
+                      !showMoreFabrics
+                    )
                   }
                   className="mt-2 text-sm font-semibold text-cyan-700"
                 >
@@ -1025,19 +1183,25 @@ function ProductSection({
             <FilterSection
               title="Size"
               section="size"
-              hasValue={selectedSizes.length > 0}
-              onClear={() => setSelectedSizes([])}
+              hasValue={
+                selectedSizes.length > 0
+              }
+              onClear={() =>
+                setSelectedSizes([])
+              }
             >
               {sizes.map((size) => (
                 <CheckboxOption
                   key={size}
                   label={size}
-                  checked={selectedSizes.includes(size)}
+                  checked={selectedSizes.includes(
+                    size
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       size,
                       setSelectedSizes,
-                      selectedSizes,
+                      selectedSizes
                     )
                   }
                 />
@@ -1051,22 +1215,29 @@ function ProductSection({
             <FilterSection
               title="Pattern"
               section="pattern"
-              hasValue={selectedPatterns.length > 0}
-              onClear={() => setSelectedPatterns([])}
+              hasValue={
+                selectedPatterns.length > 0
+              }
+              onClear={() =>
+                setSelectedPatterns([])
+              }
             >
-              {(showMorePatterns
-                ? patterns
-                : patterns.slice(0, 6)
+              {(
+                showMorePatterns
+                  ? patterns
+                  : patterns.slice(0, 6)
               ).map((pattern) => (
                 <CheckboxOption
                   key={pattern}
                   label={pattern}
-                  checked={selectedPatterns.includes(pattern)}
+                  checked={selectedPatterns.includes(
+                    pattern
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       pattern,
                       setSelectedPatterns,
-                      selectedPatterns,
+                      selectedPatterns
                     )
                   }
                 />
@@ -1076,7 +1247,9 @@ function ProductSection({
                 <button
                   type="button"
                   onClick={() =>
-                    setShowMorePatterns(!showMorePatterns)
+                    setShowMorePatterns(
+                      !showMorePatterns
+                    )
                   }
                   className="mt-2 text-sm font-semibold text-cyan-700"
                 >
@@ -1094,19 +1267,25 @@ function ProductSection({
             <FilterSection
               title="Gender"
               section="gender"
-              hasValue={selectedGenders.length > 0}
-              onClear={() => setSelectedGenders([])}
+              hasValue={
+                selectedGenders.length > 0
+              }
+              onClear={() =>
+                setSelectedGenders([])
+              }
             >
               {genders.map((gender) => (
                 <CheckboxOption
                   key={gender}
                   label={gender}
-                  checked={selectedGenders.includes(gender)}
+                  checked={selectedGenders.includes(
+                    gender
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       gender,
                       setSelectedGenders,
-                      selectedGenders,
+                      selectedGenders
                     )
                   }
                 />
@@ -1120,19 +1299,25 @@ function ProductSection({
             <FilterSection
               title="Fit"
               section="fit"
-              hasValue={selectedFits.length > 0}
-              onClear={() => setSelectedFits([])}
+              hasValue={
+                selectedFits.length > 0
+              }
+              onClear={() =>
+                setSelectedFits([])
+              }
             >
               {fits.map((fit) => (
                 <CheckboxOption
                   key={fit}
                   label={fit}
-                  checked={selectedFits.includes(fit)}
+                  checked={selectedFits.includes(
+                    fit
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       fit,
                       setSelectedFits,
-                      selectedFits,
+                      selectedFits
                     )
                   }
                 />
@@ -1146,23 +1331,31 @@ function ProductSection({
             <FilterSection
               title="Occasion"
               section="occasion"
-              hasValue={selectedOccasions.length > 0}
-              onClear={() => setSelectedOccasions([])}
+              hasValue={
+                selectedOccasions.length > 0
+              }
+              onClear={() =>
+                setSelectedOccasions([])
+              }
             >
-              {occasions.map((occasion) => (
-                <CheckboxOption
-                  key={occasion}
-                  label={occasion}
-                  checked={selectedOccasions.includes(occasion)}
-                  onChange={() =>
-                    toggleCheckbox(
-                      occasion,
-                      setSelectedOccasions,
-                      selectedOccasions,
-                    )
-                  }
-                />
-              ))}
+              {occasions.map(
+                (occasion) => (
+                  <CheckboxOption
+                    key={occasion}
+                    label={occasion}
+                    checked={selectedOccasions.includes(
+                      occasion
+                    )}
+                    onChange={() =>
+                      toggleCheckbox(
+                        occasion,
+                        setSelectedOccasions,
+                        selectedOccasions
+                      )
+                    }
+                  />
+                )
+              )}
             </FilterSection>
 
             {/* =================================================
@@ -1172,20 +1365,31 @@ function ProductSection({
             <FilterSection
               title="Price"
               section="price"
-              hasValue={selectedPrice !== ""}
-              onClear={() => setSelectedPrice("")}
+              hasValue={
+                selectedPrice !== ""
+              }
+              onClear={() =>
+                setSelectedPrice("")
+              }
             >
-              {priceOptions.map((price) => (
-                <RadioOption
-                  key={price.value}
-                  name="price"
-                  label={price.label}
-                  checked={selectedPrice === price.value}
-                  onChange={() =>
-                    setSelectedPrice(price.value)
-                  }
-                />
-              ))}
+              {priceOptions.map(
+                (price) => (
+                  <RadioOption
+                    key={price.value}
+                    name="price"
+                    label={price.label}
+                    checked={
+                      selectedPrice ===
+                      price.value
+                    }
+                    onChange={() =>
+                      setSelectedPrice(
+                        price.value
+                      )
+                    }
+                  />
+                )
+              )}
             </FilterSection>
 
             {/* =================================================
@@ -1195,22 +1399,31 @@ function ProductSection({
             <FilterSection
               title="Customer Ratings"
               section="ratings"
-              hasValue={selectedRating !== ""}
-              onClear={() => setSelectedRating("")}
+              hasValue={
+                selectedRating !== ""
+              }
+              onClear={() =>
+                setSelectedRating("")
+              }
             >
-              {ratings.map((rating) => (
-                <RadioOption
-                  key={rating.value}
-                  name="rating"
-                  label={rating.label}
-                  checked={
-                    selectedRating === rating.value
-                  }
-                  onChange={() =>
-                    setSelectedRating(rating.value)
-                  }
-                />
-              ))}
+              {ratings.map(
+                (rating) => (
+                  <RadioOption
+                    key={rating.value}
+                    name="rating"
+                    label={rating.label}
+                    checked={
+                      selectedRating ===
+                      rating.value
+                    }
+                    onChange={() =>
+                      setSelectedRating(
+                        rating.value
+                      )
+                    }
+                  />
+                )
+              )}
             </FilterSection>
 
             {/* =================================================
@@ -1220,23 +1433,35 @@ function ProductSection({
             <FilterSection
               title="Discount"
               section="discount"
-              hasValue={selectedDiscount !== ""}
-              onClear={() => setSelectedDiscount("")}
+              hasValue={
+                selectedDiscount !== ""
+              }
+              onClear={() =>
+                setSelectedDiscount("")
+              }
             >
-              {discounts.map((discount) => (
-                <RadioOption
-                  key={discount.value}
-                  name="discount"
-                  label={discount.label}
-                  checked={
-                    Number(selectedDiscount) ===
-                    discount.value
-                  }
-                  onChange={() =>
-                    setSelectedDiscount(discount.value)
-                  }
-                />
-              ))}
+              {discounts.map(
+                (discount) => (
+                  <RadioOption
+                    key={discount.value}
+                    name="discount"
+                    label={
+                      discount.label
+                    }
+                    checked={
+                      Number(
+                        selectedDiscount
+                      ) ===
+                      discount.value
+                    }
+                    onChange={() =>
+                      setSelectedDiscount(
+                        discount.value
+                      )
+                    }
+                  />
+                )
+              )}
             </FilterSection>
 
             {/* =================================================
@@ -1246,19 +1471,25 @@ function ProductSection({
             <FilterSection
               title="Offers"
               section="offers"
-              hasValue={selectedOffers.length > 0}
-              onClear={() => setSelectedOffers([])}
+              hasValue={
+                selectedOffers.length > 0
+              }
+              onClear={() =>
+                setSelectedOffers([])
+              }
             >
               {offers.map((offer) => (
                 <CheckboxOption
                   key={offer}
                   label={offer}
-                  checked={selectedOffers.includes(offer)}
+                  checked={selectedOffers.includes(
+                    offer
+                  )}
                   onChange={() =>
                     toggleCheckbox(
                       offer,
                       setSelectedOffers,
-                      selectedOffers,
+                      selectedOffers
                     )
                   }
                 />
@@ -1273,13 +1504,17 @@ function ProductSection({
               title="New Arrivals"
               section="newArrivals"
               hasValue={newArrivals}
-              onClear={() => setNewArrivals(false)}
+              onClear={() =>
+                setNewArrivals(false)
+              }
             >
               <CheckboxOption
                 label="New Arrivals"
                 checked={newArrivals}
                 onChange={() =>
-                  setNewArrivals(!newArrivals)
+                  setNewArrivals(
+                    !newArrivals
+                  )
                 }
               />
             </FilterSection>
@@ -1291,17 +1526,21 @@ function ProductSection({
             <FilterSection
               title="Availability"
               section="availability"
-              hasValue={includeOutOfStock}
+              hasValue={
+                includeOutOfStock
+              }
               onClear={() =>
                 setIncludeOutOfStock(false)
               }
             >
               <CheckboxOption
                 label="Include Out of Stock"
-                checked={includeOutOfStock}
+                checked={
+                  includeOutOfStock
+                }
                 onChange={() =>
                   setIncludeOutOfStock(
-                    !includeOutOfStock,
+                    !includeOutOfStock
                   )
                 }
               />
@@ -1334,37 +1573,30 @@ function ProductSection({
               <p className="pt-2 text-[17px] text-slate-100">
                 {searchTerm
                   ? `Search results for "${searchTerm}"`
-                  : selectedCategory === "All"
-                    ? "Browse all products available in the store."
-                    : `Showing ${selectedCategory} products.`}
+                  : selectedCategory ===
+                    "All"
+                  ? "Browse all products available in the store."
+                  : `Showing ${selectedCategory} products.`}
               </p>
 
               <p className="mt-2 text-sm text-slate-200">
                 {totalProducts} products in database
               </p>
             </div>
-
-            {/* =================================================
-                LOADING
-            ================================================= */}
+<br/>
+            {/* LOADING */}
 
             {loading ? (
               <div className="rounded-3xl bg-white p-14 text-center">
-
                 <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-cyan-800" />
 
                 <p className="mt-4 text-slate-600">
                   Loading products...
                 </p>
               </div>
-            ) : filteredProducts.length === 0 ? (
-
-              /* =================================================
-                  EMPTY
-              ================================================= */
-
+            ) : filteredProducts.length ===
+              0 ? (
               <div className="rounded-3xl bg-white p-14 text-center">
-
                 <h3 className="text-2xl font-semibold text-slate-800">
                   No products found
                 </h3>
@@ -1381,137 +1613,145 @@ function ProductSection({
                   Clear Filters
                 </button>
               </div>
-
             ) : (
-
               <>
-                {/* =================================================
-                    PRODUCTS GRID
-                ================================================= */}
+                {/* PRODUCTS GRID */}
 
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                  {filteredProducts.map(
+                    (item) => {
+                      const price =
+                        Number(
+                          item.price || 0
+                        );
 
-                  {filteredProducts.map((item) => {
+                      const oldPrice =
+                        Number(
+                          item.oldPrice ||
+                            0
+                        );
 
-                    const price = Number(
-                      item.price || 0,
-                    );
+                      const hasOldPrice =
+                        oldPrice >
+                        price;
 
-                    const oldPrice = Number(
-                      item.oldPrice || 0,
-                    );
+                      const discount =
+                        hasOldPrice
+                          ? Math.round(
+                              ((oldPrice -
+                                price) /
+                                oldPrice) *
+                                100
+                            )
+                          : 0;
 
-                    const hasOldPrice =
-                      oldPrice > price;
+                      return (
+                        <Link
+                          key={item.id}
+                          to={`/product/${item.id}`}
+                          className="block"
+                        >
+                          <div className="flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-md transition duration-300 hover:scale-[1.02] hover:shadow-xl">
 
-                    const discount = hasOldPrice
-                      ? Math.round(
-                          ((oldPrice - price) /
-                            oldPrice) *
-                            100,
-                        )
-                      : 0;
+                            {/* IMAGE */}
 
-                    return (
-                      <Link
-                        key={item.id}
-                        to={`/product/${item.id}`}
-                        className="block"
-                      >
-                        <div className="flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-md transition duration-300 hover:scale-[1.02] hover:shadow-xl">
-
-                          {/* IMAGE */}
-
-                          <div className="relative">
-
-                            <img
-                              src={`${imageURL}/${item.image}`}
-                              alt={
-                                item.title ||
-                                item.name ||
-                                "Product"
-                              }
-                              className="h-72 w-full object-cover sm:h-80"
-                              onError={(e) => {
-                                e.currentTarget.style.display =
-                                  "none";
-                              }}
-                            />
-
-                            {hasOldPrice && (
-                              <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">
-                                {discount}% OFF
-                              </span>
-                            )}
-
-                          </div>
-
-                          {/* INFO */}
-
-                          <div className="flex flex-1 flex-col p-4 text-center">
-
-                            <p className="text-sm text-slate-500">
-                              {item.category}
-                            </p>
-
-                            <h2 className="mt-1 text-xl font-semibold text-slate-900">
-                              {item.title ||
-                                item.name ||
-                                "Product"}
-                            </h2>
-
-                            {item.brand && (
-                              <p className="mt-1 text-sm text-slate-500">
-                                {item.brand}
-                              </p>
-                            )}
-
-                            {/* PRICE */}
-
-                            <div className="mt-3 flex items-center justify-center gap-3">
-
-                              <span className="text-lg font-bold text-slate-900">
-                                ₹{price}
-                              </span>
+                            <div className="relative">
+                              <img
+                                src={`${imageURL}/${item.image}`}
+                                alt={
+                                  item.title ||
+                                  item.name ||
+                                  "Product"
+                                }
+                                className="h-72 w-full object-cover sm:h-80"
+                                onError={(
+                                  e
+                                ) => {
+                                  e.currentTarget.style.display =
+                                    "none";
+                                }}
+                              />
 
                               {hasOldPrice && (
-                                <span className="text-slate-400 line-through">
-                                  ₹{oldPrice}
+                                <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1 text-sm font-bold text-white">
+                                  {discount}% OFF
                                 </span>
                               )}
-
                             </div>
 
-                            {/* OFFER */}
+                            {/* INFO */}
 
-                            {hasOldPrice && (
-                              <p className="mt-2 font-semibold text-green-600">
-                                {item.offer ||
-                                  `${discount}% OFF`}
+                            <div className="flex flex-1 flex-col p-4 text-center">
+                              <p className="text-sm text-slate-500">
+                                {
+                                  item.category
+                                }
                               </p>
-                            )}
 
-                            {/* RATING */}
+                              <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                                {item.title ||
+                                  item.name ||
+                                  "Product"}
+                              </h2>
 
-                            {item.rating !== undefined &&
-                              item.rating !== null &&
-                              item.rating !== "" && (
-                                <p className="mt-2 text-sm font-semibold text-yellow-600">
-                                  ★ {item.rating}
+                              {item.brand && (
+                                <p className="mt-1 text-sm text-slate-500">
+                                  {
+                                    item.brand
+                                  }
                                 </p>
                               )}
 
+                              {/* PRICE */}
+
+                              <div className="mt-3 flex items-center justify-center gap-3">
+                                <span className="text-lg font-bold text-slate-900">
+                                  ₹{price}
+                                </span>
+
+                                {hasOldPrice && (
+                                  <span className="text-slate-400 line-through">
+                                    ₹
+                                    {
+                                      oldPrice
+                                    }
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* OFFER */}
+
+                              {hasOldPrice && (
+                                <p className="mt-2 font-semibold text-green-600">
+                                  {item.offer ||
+                                    `${discount}% OFF`}
+                                </p>
+                              )}
+
+                              {/* RATING */}
+
+                              {item.rating !==
+                                undefined &&
+                                item.rating !==
+                                  null &&
+                                item.rating !==
+                                  "" && (
+                                  <p className="mt-2 text-sm font-semibold text-yellow-600">
+                                    ★{" "}
+                                    {
+                                      item.rating
+                                    }
+                                  </p>
+                                )}
+                            </div>
                           </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-
+                        </Link>
+                      );
+                    }
+                  )}
                 </div>
-
-                {/* =================================================
-                    BACKEND PAGINATION
-                ================================================= */}
+<br/><br/>
+                {/* PAGINATION */}
 
                 {totalPages > 1 && (
                   <div className="mt-12">
@@ -1522,14 +1762,19 @@ function ProductSection({
 
                       <button
                         type="button"
-                        disabled={currentPage === 1}
+                        disabled={
+                          currentPage ===
+                          1
+                        }
                         onClick={() =>
                           onPageChange(
-                            currentPage - 1,
+                            currentPage -
+                              1
                           )
                         }
                         className={`rounded-lg px-4 py-2 font-semibold transition ${
-                          currentPage === 1
+                          currentPage ===
+                          1
                             ? "cursor-not-allowed bg-slate-300 text-slate-500"
                             : "bg-white text-cyan-800 hover:bg-cyan-100"
                         }`}
@@ -1540,8 +1785,10 @@ function ProductSection({
                       {/* PAGE NUMBERS */}
 
                       {getPageNumbers().map(
-                        (page, index) => {
-
+                        (
+                          page,
+                          index
+                        ) => {
                           if (
                             typeof page ===
                             "string"
@@ -1562,7 +1809,7 @@ function ProductSection({
                               key={page}
                               onClick={() =>
                                 onPageChange(
-                                  page,
+                                  page
                                 )
                               }
                               className={`min-w-[42px] rounded-lg px-4 py-2 font-semibold transition ${
@@ -1575,7 +1822,7 @@ function ProductSection({
                               {page}
                             </button>
                           );
-                        },
+                        }
                       )}
 
                       {/* NEXT */}
@@ -1588,7 +1835,8 @@ function ProductSection({
                         }
                         onClick={() =>
                           onPageChange(
-                            currentPage + 1,
+                            currentPage +
+                              1
                           )
                         }
                         className={`rounded-lg px-4 py-2 font-semibold transition ${
@@ -1600,13 +1848,11 @@ function ProductSection({
                       >
                         Next →
                       </button>
-
                     </div>
 
                     {/* PAGE INFO */}
 
                     <div className="pt-5 text-center text-white">
-
                       <p>
                         Page{" "}
                         <span className="font-bold">
@@ -1620,19 +1866,21 @@ function ProductSection({
 
                       <p className="mt-1 text-sm text-slate-200">
                         Showing{" "}
-                        {firstProductIndex + 1}
+                        {totalProducts ===
+                        0
+                          ? 0
+                          : firstProductIndex +
+                            1}
                         -
                         {Math.min(
                           lastProductIndex,
-                          totalProducts,
+                          totalProducts
                         )}{" "}
                         of{" "}
                         {totalProducts}{" "}
                         products
                       </p>
-
                     </div>
-
                   </div>
                 )}
               </>

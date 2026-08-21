@@ -900,7 +900,7 @@ function Checkout() {
                         </span>
 
                       </label>
-
+<br/>
                       {/* UPI */}
 
                       <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-gray-300 bg-white p-4">
@@ -926,7 +926,7 @@ function Checkout() {
                         </span>
 
                       </label>
-
+<br/>
                       {/* COD */}
 
                       <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-gray-300 bg-white p-4">
